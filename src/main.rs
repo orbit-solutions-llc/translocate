@@ -91,26 +91,22 @@ fn generate_json(file: &PathBuf) -> Result<(), std::io::Error> {
     Ok(())
 }
 
-fn get_file() -> Result<PathBuf, io::Error> {
+fn get_file_location() -> Result<PathBuf, io::Error> {
     let cwd = std::env::current_dir()?;
     // Get cli arguments, then make sure an arg was actually passed
     let path = env::args_os().nth(1).expect(MSG);
 
-    // If the path begins with a '/' assume an absolute path. This
-    // means windows users can only provide relative paths. 🤷🏾‍♂️
-    if path
-        .to_str()
-        .expect("Invalid path string provided.")
-        .starts_with('/')
-    {
-        Ok(PathBuf::from(path))
+    let full_path = PathBuf::from(path);
+
+    if full_path.has_root() {
+      Ok(full_path)
     } else {
-        Ok(cwd.join(path))
+      Ok(cwd.join(full_path))
     }
 }
 
 fn main() -> Result<(), io::Error> {
-    let csv_path = if let Ok(path) = get_file() {
+    let csv_path = if let Ok(path) = get_file_location() {
         path
     } else {
         PathBuf::from("APP_Trans.tsv")
