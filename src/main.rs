@@ -1,21 +1,15 @@
-use csv::{Error, StringRecord};
 use serde::{Deserialize, Serialize};
 use serde_json::{to_string, to_string_pretty, Map, Value};
-use std::collections::{hash_map, HashMap};
-use std::{env, fs::File, io::Write};
+use std::collections::HashMap;
+use std::path::PathBuf;
+use std::{
+    env,
+    fs::File,
+    io::{self, Write},
+};
 
 #[derive(Debug, Deserialize, Serialize)]
 struct Languages {
-    // da_DK: String,
-    // de_DE: String,
-    // en_US: String,
-    // es_ES: String,
-    // fr_FR: String,
-    // it_IT: String,
-    // nl_NL: String,
-    // pt_BR: String,
-    // pt_PT: String,
-    // sv_SE: String,
     #[serde(alias = "da_DK")]
     da_dk: String,
     #[serde(alias = "de_DE")]
@@ -41,7 +35,6 @@ struct Languages {
 #[derive(Debug, Deserialize, Serialize)]
 struct Translations {
     id: String,
-    // TextDomain: String,
     #[serde(alias = "TextDomain")]
     text_domain: String,
     #[serde(flatten)]
@@ -72,37 +65,63 @@ impl FormatTranslation for Translations {
     }
 }
 
-const MSG: &str = "Please give relative path to file as a command line argument!";
+const MSG: &str = "Please give file path as a command line argument!";
 
-fn generate_json<'a>(file: &File) -> Result<(), std::io::Error> {
-    // Grab csv data for standard input.
-    // TODO: Change to getting from csv file, then read in twice so we can get a count
-    // and set HashMap::with_capacity
-    let mut reader = csv::Reader::from_reader(file);
-    let mut reader_count = csv::Reader::from_reader(file);
+fn generate_json(file: &PathBuf) -> Result<(), std::io::Error> {
+    // Grab csv data from csv file
+    let mut reader = csv::ReaderBuilder::new()
+        .delimiter(b'\t')
+        .escape(Some(b'\\'))
+        .flexible(true)
+        .quoting(true)
+        .trim(csv::Trim::Fields)
+        .from_path(file)?;
+    let mut reader_count = csv::Reader::from_path(file)?;
     // Copy the data here to avoid borrowing. Allows deserializing (which borrows the
     // reader data) later on.
     let headings = reader.headers()?.clone();
 
-    let rows = reader_count.records().count();
+    let rows = reader_count.byte_records().count();
 
     // HashMap::with_capacity_and_hasher(capacity, hasher) can be used instead, with hasher that is faster
     // https://crates.io/keywords/hasher
     let mut dictionary: HashMap<&str, Map<String, Value>> = HashMap::with_capacity(rows);
 
+    let mut idx = 0;
     for item in reader.deserialize() {
-        let record: Translations = item?;
-        println!("The current record is {:?}", record);
+        idx += 1;
+        let record: Translations = match item {
+            Ok(rec) => rec,
+            Err(err) => {
+                // We could be nice and break here, but there will be a lot of output
+                // about duplicates so let's panic here and give user a chance to fix csv file.
+                // println!("{}", err);
+                // break;
+
+                panic!("{}", err);
+            }
+        };
+        let mut overwrote_data = false;
         for heading in headings.iter() {
             // Only process for language headings
             if heading != "id" && heading != "TextDomain" && !heading.is_empty() {
-                println!("Currently processing {}", heading);
                 let kv = record.translate_to(heading);
                 if let Some(lang_map) = dictionary.get_mut(heading) {
                     // check value of insert to make sure we're not overwriting anything.
                     // Here into() is used to convert from string references into the key and value types the
                     // json Map needs.
-                    lang_map.insert(kv.0.into(), kv.1.into());
+                    let old_val = lang_map.insert(kv.0.into(), kv.1.into());
+                    if let Some(_val) = old_val {
+                        if !overwrote_data {
+                            // println!("Overwrite previous entry for \"{}\".\nOld: {:#?}\nNew {:#?}", kv.0, val, kv.1);
+                            println!(
+                                "Overwrite prior entry for \"{}\" in record {idx} (line {}).",
+                                kv.0,
+                                idx + 1
+                            );
+                            overwrote_data = true;
+                        }
+                    };
                 } else {
                     dictionary.insert(heading, Map::with_capacity(rows));
 
@@ -114,7 +133,6 @@ fn generate_json<'a>(file: &File) -> Result<(), std::io::Error> {
             }
         }
     }
-    println!("{:?}", dictionary);
 
     for lang in dictionary.keys() {
         let filename = format!("{lang}.json");
@@ -122,21 +140,36 @@ fn generate_json<'a>(file: &File) -> Result<(), std::io::Error> {
         if let Some(json) = dictionary.get(lang) {
             writeln!(file, "{}", to_string_pretty(json).unwrap())?;
         }
+        println!("{lang}.json written to current directory.");
     }
 
     Ok(())
 }
 
-fn main() -> Result<(), csv::Error> {
+fn get_file() -> Result<PathBuf, io::Error> {
     let cwd = std::env::current_dir()?;
     // Get cli arguments, then make sure an arg was actually passed
-    let args = env::args().collect::<Vec<String>>();
-    if args.len() < 2 {
-        println!("{MSG}")
-    }
-    let csv_path = cwd.join(&args[1]);
-    let csv_file = File::open(csv_path)?;
+    let path = env::args_os().nth(1).expect(MSG);
 
-    generate_json(&csv_file);
-    Ok(())
+    // If the path begins with a '/' assume an absolute path. This
+    // means windows users can only provide relative paths. 🤷🏾‍♂️
+    if path
+        .to_str()
+        .expect("Invalid path string provided.")
+        .starts_with('/')
+    {
+        Ok(PathBuf::from(path))
+    } else {
+        Ok(cwd.join(path))
+    }
+}
+
+fn main() -> Result<(), io::Error> {
+    let csv_path = if let Ok(path) = get_file() {
+        path
+    } else {
+        PathBuf::from("APP_Trans.tsv")
+    };
+
+    generate_json(&csv_path)
 }
