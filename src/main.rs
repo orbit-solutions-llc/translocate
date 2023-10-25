@@ -9,8 +9,18 @@ use translations::{FormatTranslation, Translations};
 const MSG: &str = "Please give file path as a command line argument!";
 
 fn generate_json(file: &PathBuf) -> Result<(), std::io::Error> {
+    let delimiter = if let Some(val) = file.extension() {
+      if val == "tsv" {
+        b'\t'
+      } else {
+        b','
+      }
+    } else {
+      // If no file extension found, use comma delimiter
+      b','
+    };
     let mut reader = csv::ReaderBuilder::new()
-        .delimiter(b'\t')
+        .delimiter(delimiter)
         .escape(Some(b'\\'))
         .flexible(true)
         .quoting(true)
