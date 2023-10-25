@@ -1,11 +1,7 @@
 use serde_json::{to_string_pretty, Map, Value};
 use std::collections::HashMap;
 use std::path::PathBuf;
-use std::{
-    env,
-    fs::File,
-    io::{self, Write},
-};
+use std::{env, fs::File, io, io::Write};
 
 mod translations;
 use translations::{FormatTranslation, Translations};
@@ -13,7 +9,6 @@ use translations::{FormatTranslation, Translations};
 const MSG: &str = "Please give file path as a command line argument!";
 
 fn generate_json(file: &PathBuf) -> Result<(), std::io::Error> {
-    // Grab csv data from csv file
     let mut reader = csv::ReaderBuilder::new()
         .delimiter(b'\t')
         .escape(Some(b'\\'))
@@ -22,49 +17,37 @@ fn generate_json(file: &PathBuf) -> Result<(), std::io::Error> {
         .trim(csv::Trim::Fields)
         .from_path(file)?;
     let mut reader_count = csv::Reader::from_path(file)?;
-    // Copy the data here to avoid borrowing. Allows deserializing (which borrows the
-    // reader data) later on.
     let headings = reader.headers()?.clone();
 
     let rows = reader_count.byte_records().count();
 
-    // HashMap::with_capacity_and_hasher(capacity, hasher) can be used instead, with hasher that is faster
-    // https://crates.io/keywords/hasher
+    // HashMap::with_capacity_and_hasher(capacity, hasher) can be used instead, with hasher
+    // that is faster https://crates.io/keywords/hasher
     let mut dictionary: HashMap<&str, Map<String, Value>> = HashMap::with_capacity(rows);
+    let mut times_overwritten = 0;
 
-    let mut idx = 0;
-    for item in reader.deserialize() {
-        idx += 1;
-        let record: Translations = match item {
-            Ok(rec) => rec,
-            Err(err) => {
-                // We could be nice and break here, but there will be a lot of output
-                // about duplicates so let's panic here and give user a chance to fix csv file.
-                // println!("{}", err);
-                // break;
-
-                panic!("{}", err);
-            }
-        };
+    for (idx, item) in reader.deserialize().enumerate() {
+        let record: Translations = item?;
         let mut overwrote_data = false;
+
+        // Loop in a loop? Incredibly inefficient? Who cares!? Optimize when it matters.
         for heading in headings.iter() {
             // Only process for language headings
             if heading != "id" && heading != "TextDomain" && !heading.is_empty() {
                 let kv = record.translate_to(heading);
                 if let Some(lang_map) = dictionary.get_mut(heading) {
-                    // check value of insert to make sure we're not overwriting anything.
-                    // Here into() is used to convert from string references into the key and value types the
-                    // json Map needs.
+                    // into() used to convert from &str into the key / value types for JSON Map.
                     let old_val = lang_map.insert(kv.0.into(), kv.1.into());
                     if let Some(_val) = old_val {
                         if !overwrote_data {
                             // println!("Overwrite previous entry for \"{}\".\nOld: {:#?}\nNew {:#?}", kv.0, val, kv.1);
                             println!(
-                                "Overwrite prior entry for \"{}\" in record {idx} (line {}).",
+                                "Warning: key \"{}\" overwritten by record {idx} (line {}).",
                                 kv.0,
                                 idx + 1
                             );
                             overwrote_data = true;
+                            times_overwritten += 1;
                         }
                     };
                 } else {
@@ -72,18 +55,23 @@ fn generate_json(file: &PathBuf) -> Result<(), std::io::Error> {
 
                     dictionary
                         .get_mut(heading)
-                        .expect("Just created map")
+                        .expect("Unexpected error after creating map")
                         .insert(kv.0.into(), kv.1.into());
                 }
             }
         }
     }
+    println!("\n{times_overwritten} translation keys overwritten during conversion.");
 
     for lang in dictionary.keys() {
         let filename = format!("{lang}.json");
         let mut file = File::create(filename)?;
         if let Some(json) = dictionary.get(lang) {
-            writeln!(file, "{}", to_string_pretty(json).unwrap())?;
+            writeln!(
+                file,
+                "{}",
+                to_string_pretty(json).expect("Error writing {lang}.json.")
+            )?;
         }
         println!("{lang}.json written to current directory.");
     }
@@ -91,6 +79,7 @@ fn generate_json(file: &PathBuf) -> Result<(), std::io::Error> {
     Ok(())
 }
 
+/// Checks for and uses first argument as path to file. Prints error if no CLI argument given.
 fn get_file_location() -> Result<PathBuf, io::Error> {
     let cwd = std::env::current_dir()?;
     // Get cli arguments, then make sure an arg was actually passed
@@ -99,18 +88,21 @@ fn get_file_location() -> Result<PathBuf, io::Error> {
     let full_path = PathBuf::from(path);
 
     if full_path.has_root() {
-      Ok(full_path)
+        Ok(full_path)
     } else {
-      Ok(cwd.join(full_path))
+        Ok(cwd.join(full_path))
     }
 }
 
-fn main() -> Result<(), io::Error> {
+fn main() {
     let csv_path = if let Ok(path) = get_file_location() {
         path
     } else {
         PathBuf::from("APP_Trans.tsv")
     };
 
-    generate_json(&csv_path)
+    match generate_json(&csv_path) {
+        Ok(_) => println!("\nConversion successful!"),
+        Err(err) => println!("{}", err),
+    }
 }
