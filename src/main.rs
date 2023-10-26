@@ -46,7 +46,7 @@ fn generate_json(file: &PathBuf) -> Result<(), std::io::Error> {
         // Loop in a loop? Incredibly inefficient? Who cares!? Optimize when it matters.
         for heading in headings.iter() {
             // Only process for language headings
-            if heading != "id" && heading != "TextDomain" && !heading.is_empty() {
+            if heading != "id" && heading != "TextDomain" && !heading.trim().is_empty() {
                 let kv = record.translate_to(heading);
                 if let Some(lang_map) = dictionary.get_mut(heading) {
                     // No matter what the parser thinks, we want everything treated as a string
