@@ -21,12 +21,13 @@ fn generate_json(file: &PathBuf) -> Result<(), std::io::Error> {
     };
     let delimiter = if is_tsv { b'\t' } else { b',' };
     let escape = if is_tsv { Some(b'\\') } else { Some(b'"') };
+    let terminator= if is_tsv { csv::Terminator::Any(b'\n') } else { csv::Terminator::CRLF };
 
     let mut reader = csv::ReaderBuilder::new()
         .delimiter(delimiter)
         .escape(escape)
         .flexible(true)
-        .trim(csv::Trim::Fields)
+        .terminator(terminator)
         .from_path(file)?;
     let mut reader_count = csv::Reader::from_path(file)?;
     let headings = reader.headers()?.clone();
