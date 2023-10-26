@@ -1,27 +1,35 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize)]
+#[serde(untagged)]
+pub enum LangData {
+    Integer(i64),
+    Float(f64),
+    String(String)
+}
+
+#[derive(Debug, Deserialize, Serialize)]
 struct Languages {
     #[serde(alias = "da_DK")]
-    da_dk: String,
+    da_dk: LangData,
     #[serde(alias = "de_DE")]
-    de_de: String,
+    de_de: LangData,
     #[serde(alias = "en_US")]
-    en_us: String,
+    en_us: LangData,
     #[serde(alias = "es_ES")]
-    es_es: String,
+    es_es: LangData,
     #[serde(alias = "fr_FR")]
-    fr_fr: String,
+    fr_fr: LangData,
     #[serde(alias = "it_IT")]
-    it_it: String,
+    it_it: LangData,
     #[serde(alias = "nl_NL")]
-    nl_nl: String,
+    nl_nl: LangData,
     #[serde(alias = "pt_BR")]
-    pt_br: String,
+    pt_br: LangData,
     #[serde(alias = "pt_PT")]
-    pt_pt: String,
+    pt_pt: LangData,
     #[serde(alias = "sv_SE")]
-    sv_se: String,
+    sv_se: LangData,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -34,11 +42,11 @@ pub struct Translations {
 }
 
 pub trait FormatTranslation {
-    fn translate_to(&self, lang: &str) -> (&str, &str);
+    fn translate_to(&self, lang: &str) -> (&str, &LangData);
 }
 
 impl FormatTranslation for Translations {
-    fn translate_to(&self, lang: &str) -> (&str, &str) {
+    fn translate_to(&self, lang: &str) -> (&str, &LangData) {
         match lang {
             "da_DK" => (&self.id, &self.languages.da_dk),
             "de_DE" => (&self.id, &self.languages.de_de),
