@@ -4,26 +4,28 @@ use std::path::PathBuf;
 use std::{env, fs::File, io, io::Write};
 
 mod translations;
-use translations::{FormatTranslation, Translations};
+use translations::{FormatTranslation, LangData, Translations};
 
 const MSG: &str = "Please give file path as a command line argument!";
 
 fn generate_json(file: &PathBuf) -> Result<(), std::io::Error> {
-    let delimiter = if let Some(val) = file.extension() {
-      if val == "tsv" {
-        b'\t'
-      } else {
-        b','
-      }
+    let is_tsv = if let Some(val) = file.extension() {
+        if val == "tsv" {
+            true
+        } else {
+            false
+        }
     } else {
-      // If no file extension found, use comma delimiter
-      b','
+        // If no file extension found, assume csv
+        false
     };
+    let delimiter = if is_tsv { b'\t' } else { b',' };
+    let escape = if is_tsv { Some(b'\\') } else { Some(b'"') };
+
     let mut reader = csv::ReaderBuilder::new()
         .delimiter(delimiter)
-        .escape(Some(b'\\'))
+        .escape(escape)
         .flexible(true)
-        .quoting(true)
         .trim(csv::Trim::Fields)
         .from_path(file)?;
     let mut reader_count = csv::Reader::from_path(file)?;
@@ -46,14 +48,21 @@ fn generate_json(file: &PathBuf) -> Result<(), std::io::Error> {
             if heading != "id" && heading != "TextDomain" && !heading.is_empty() {
                 let kv = record.translate_to(heading);
                 if let Some(lang_map) = dictionary.get_mut(heading) {
-                    // into() used to convert from &str into the key / value types for JSON Map.
-                    let old_val = lang_map.insert(kv.0.into(), kv.1.into());
+                    // No matter what the parser thinks, we want everything treated as a string
+                    let value = match kv.1 {
+                        LangData::Float(v) => format!("{v}"),
+                        LangData::Integer(v) => format!("{v}"),
+                        LangData::String(v) => v.to_owned(),
+                    };
+
+                    let old_val = lang_map.insert(kv.0.into(), value.into());
                     if let Some(_val) = old_val {
                         if !overwrote_data {
                             // println!("Overwrite previous entry for \"{}\".\nOld: {:#?}\nNew {:#?}", kv.0, val, kv.1);
                             println!(
-                                "Warning: key \"{}\" overwritten by record {idx} (line {}).",
+                                "Warning: key \"{}\" overwritten by record {} (line {}).",
                                 kv.0,
+                                idx + 1,
                                 idx + 1
                             );
                             overwrote_data = true;
@@ -62,11 +71,17 @@ fn generate_json(file: &PathBuf) -> Result<(), std::io::Error> {
                     };
                 } else {
                     dictionary.insert(heading, Map::with_capacity(rows));
+                    // No matter what the parser thinks, we want everything treated as a string
+                    let value = match kv.1 {
+                        LangData::Float(v) => format!("{v}"),
+                        LangData::Integer(v) => format!("{v}"),
+                        LangData::String(v) => v.to_owned(),
+                    };
 
                     dictionary
                         .get_mut(heading)
                         .expect("Unexpected error after creating map")
-                        .insert(kv.0.into(), kv.1.into());
+                        .insert(kv.0.into(), value.into());
                 }
             }
         }
