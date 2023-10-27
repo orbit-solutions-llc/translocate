@@ -1,7 +1,23 @@
 [package]
-name = "csv2i18n_json"
+name = "translocate"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
+documentation = "https://docs.rs/translocate"
+repository = "https://code.orbitsolutions.dev/orb-it-solutions/translocate"
+readme = "README.md"
+keywords = [
+  "command-line",
+  "csv",
+  "json",
+  "parse",
+  "parsing",
+  "localization",
+  "serde",
+  "tsv",
+]
+categories = ["command-line-utilities"]
+exclude = [".gitea/*", ".github/*", ".vscode/*"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

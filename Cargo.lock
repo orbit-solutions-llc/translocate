@@ -24,15 +24,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "csv2i18n_json"
-version = "0.1.0"
-dependencies = [
- "csv",
- "serde",
- "serde_json",
-]
-
-[[package]]
 name = "itoa"
 version = "1.0.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -108,6 +99,15 @@ dependencies = [
  "proc-macro2",
  "quote",
  "unicode-ident",
+]
+
+[[package]]
+name = "translocate"
+version = "0.1.0"
+dependencies = [
+ "csv",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
