@@ -3,6 +3,7 @@ name = "translocate"
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
+description = "translocate is a high performance converter that takes CSV translation files and outputs corresponding JSON translation files."
 documentation = "https://docs.rs/translocate"
 repository = "https://code.orbitsolutions.dev/orb-it-solutions/translocate"
 readme = "README.md"
@@ -11,7 +12,6 @@ keywords = [
   "i18n",
   "internationalization",
   "json",
-  "l10n",
   "localization",
 ]
 categories = ["command-line-utilities", "encoding", "internationalization", "localization"]

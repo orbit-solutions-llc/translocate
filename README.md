@@ -1,6 +1,6 @@
-# translocation - convert CSV translation files to JSON
+# translocate - convert CSV translation files to JSON
 
-**`translocation`** is a high performance (it's *blazingly* fast) CSV translation to JSON translation file transformer. It takes `.csv` or `.tsv` files as input, and will output one file for each language listed as a CSV column.
+**`translocate`** is a high performance (it's *blazingly* fast) CSV translation to JSON translation file transformer. It takes `.csv` or `.tsv` files as input, and will output one file for each language listed as a CSV column.
 
 ## Requirements for use
 
@@ -13,4 +13,4 @@ There are currently two internal methods used to transform your localized string
 
 If any of these requirements can not be met, interested users are encouraged to [make a pull request](https://code.orbitsolutions.dev/orb-it-solutions/translocate/pulls). Alternatively you may fork the repository and modify for your specific needs, as the license is *quite* permissive.
 
-If you need to do some processing of your CSV before passing to **`translocation`**, consider checking out the [qsv](https://crates.io/crates/qsv) or [xsv](https://crates.io/crates/xsv) crate.
+If you need to do some processing of your CSV before passing to **`translocate`**, consider checking out the [qsv](https://crates.io/crates/qsv) or [xsv](https://crates.io/crates/xsv) crate.
