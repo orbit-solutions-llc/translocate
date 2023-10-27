@@ -7,16 +7,14 @@ documentation = "https://docs.rs/translocate"
 repository = "https://code.orbitsolutions.dev/orb-it-solutions/translocate"
 readme = "README.md"
 keywords = [
-  "command-line",
   "csv",
+  "i18n",
+  "internationalization",
   "json",
-  "parse",
-  "parsing",
+  "l10n",
   "localization",
-  "serde",
-  "tsv",
 ]
-categories = ["command-line-utilities"]
+categories = ["command-line-utilities", "encoding", "internationalization", "localization"]
 exclude = [".gitea/*", ".github/*", ".vscode/*"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
