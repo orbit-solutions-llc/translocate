@@ -9,6 +9,7 @@ mod translations;
 use generators::{generate_json, generate_json_fast};
 
 const APP_DESC: &str = "trans·lo·cate, verb, to move from one place to another.";
+const MSG: &str = "Please give file path as a command line argument!";
 
 #[derive(FromArgs)]
 /// High performance CSV translation to JSON translation file transformer.
@@ -26,11 +27,12 @@ struct CliArgs {
     /// record terminator to use. CSV default is `\r`, `\n` or `\r\n`. TSV default is `\n`.
     terminator: Option<u8>,
     #[argh(switch, short = 'v')]
-    /// version info
+    /// version information
     version: Option<bool>,
     #[argh(positional)]
-    /// relative or absolute path to CSV or TSV.
-    file: String,
+    /// relative or absolute path to CSV or TSV. If no file is provided, one called "translations.csv"
+    /// is looked for in the current directory.
+    file: Option<String>,
 }
 
 /// Checks for and uses first argument as path to file. Prints error if no CLI argument given.
@@ -59,7 +61,7 @@ fn main() -> Result<(), std::io::Error> {
         ));
     }
 
-    let csv_path = if let Ok(path) = get_file_location(&cli.file) {
+    let csv_path = if let Ok(path) = get_file_location(&cli.file.expect(MSG)) {
         path
     } else {
         PathBuf::from("translations.csv")

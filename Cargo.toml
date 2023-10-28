@@ -1,6 +1,6 @@
 [package]
 name = "translocate"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 license = "MIT"
 description = "translocate is a high performance converter that takes CSV translation files and outputs corresponding JSON translation files."
