@@ -25,7 +25,7 @@ pub fn generate_json(
         for heading in headings.iter() {
             // Only process for language headings
             if heading != "id" && heading != "TextDomain" && !heading.trim().is_empty() {
-                let kv = record.translate_to(heading);
+                let kv = record.format_lang(heading);
                 if let Some(lang_map) = dictionary.get_mut(heading) {
                     // No matter what the parser thinks, we want everything treated as a string
                     let value = match kv.1 {

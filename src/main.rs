@@ -9,23 +9,23 @@ mod translations;
 use generators::{generate_json, generate_json_fast};
 
 const APP_DESC: &str = "trans·lo·cate, verb, to move from one place to another.";
-const MSG: &str = "Please give file path as a command line argument!";
+const MISSING_FILE_ERR: &str = "Please give file path as a command line argument!";
 
 #[derive(FromArgs)]
 /// High performance CSV translation to JSON translation file transformer.
 struct CliArgs {
     #[argh(option, short = 'd')]
     /// field delimiter to use when parsing. Uses `\t` for TSV and `,` for CSV by default.
-    delimiter: Option<u8>,
+    delimiter: Option<String>,
     #[argh(option, short = 'e')]
     /// escape character to use for quotes when parsing. Uses `\` for TSV and `"` for CSV by default.
-    escape_char: Option<u8>,
+    escape_char: Option<String>,
     #[argh(switch, short = 'i')]
     /// if the number of fields in records is allowed to change. Enabling makes parsing more strict.
     inflexible: bool,
     #[argh(option, short = 't')]
     /// record terminator to use. CSV default is `\r`, `\n` or `\r\n`. TSV default is `\n`.
-    terminator: Option<u8>,
+    terminator: Option<String>,
     #[argh(switch, short = 'v')]
     /// version information
     version: Option<bool>,
@@ -61,11 +61,12 @@ fn main() -> Result<(), std::io::Error> {
         ));
     }
 
-    let csv_path = if let Ok(path) = get_file_location(&cli.file.expect(MSG)) {
-        path
+    let file_path = if let Some(file) = &cli.file {
+        file
     } else {
-        PathBuf::from("translations.csv")
+        "translations.csv"
     };
+    let csv_path = get_file_location(file_path)?;
 
     let is_tsv = if let Some(val) = csv_path.extension() {
         if val == "tsv" {
@@ -79,7 +80,7 @@ fn main() -> Result<(), std::io::Error> {
     };
 
     let delimiter = if let Some(delim) = cli.delimiter {
-        delim
+        delim.as_bytes()[0]
     } else if is_tsv {
         b'\t'
     } else {
@@ -87,15 +88,15 @@ fn main() -> Result<(), std::io::Error> {
     };
 
     let escape = if let Some(esc) = cli.escape_char {
-        Some(esc)
+        esc.as_bytes()[0]
     } else if is_tsv {
-        Some(b'\\')
+        b'\\'
     } else {
-        Some(b'"')
+        b'"'
     };
 
     let terminator = if let Some(terminate) = cli.terminator {
-        Terminator::Any(terminate)
+        Terminator::Any(terminate.as_bytes()[0])
     } else if is_tsv {
         Terminator::Any(b'\n')
     } else {
@@ -104,7 +105,7 @@ fn main() -> Result<(), std::io::Error> {
 
     let mut reader = ReaderBuilder::new()
         .delimiter(delimiter)
-        .escape(escape)
+        .escape(Some(escape))
         .flexible(!cli.inflexible)
         .terminator(terminator)
         .from_path(&csv_path)?;

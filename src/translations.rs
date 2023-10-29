@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 
+/// Represents the different types of data we expect to see in a CSV/TSV file.
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(untagged)]
 pub enum LangData {
@@ -8,6 +9,9 @@ pub enum LangData {
     String(String),
 }
 
+/// List of languages we will attempt to (de)serialize from/to.
+/// To support more languages when (de)serializing they need to be
+/// added to this struct.
 #[derive(Debug, Deserialize, Serialize)]
 struct Languages {
     #[serde(alias = "da_DK")]
@@ -42,6 +46,8 @@ struct Languages {
     sv_se: LangData,
 }
 
+/// Fields represent the data in (C/T)SV file headers that we want to
+/// get/convert.
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Translations {
     id: String,
@@ -52,11 +58,13 @@ pub struct Translations {
 }
 
 pub trait FormatTranslation {
-    fn translate_to(&self, lang: &str) -> (&str, &LangData);
+    fn format_lang(&self, lang: &str) -> (&str, &LangData);
 }
 
+/// Provides data from recognized languages as a tuple of two columns (id, language).
 impl FormatTranslation for Translations {
-    fn translate_to(&self, lang: &str) -> (&str, &LangData) {
+    /// Provides serialized data for the matching lang argument.
+    fn format_lang(&self, lang: &str) -> (&str, &LangData) {
         match lang {
             "da_DK" => (&self.id, &self.languages.da_dk),
             "da-DK" => (&self.id, &self.languages.da_dk),
