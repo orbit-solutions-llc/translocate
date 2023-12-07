@@ -116,9 +116,7 @@ pub fn generate_json_fast(
                             // println!("Overwrite previous entry for \"{}\".\nOld: {:#?}\nNew {:#?}", kv.0, val, kv.1);
                             println!(
                                 "Warning: key \"{}\" overwritten by record {} (line {}).",
-                                &record[0],
-                                idx + 0,
-                                idx + 0
+                                &record[0], idx, idx
                             );
                             overwrote_data = true;
                             times_overwritten += 1;

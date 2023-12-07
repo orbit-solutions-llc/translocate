@@ -1,5 +1,5 @@
 use argh::FromArgs;
-use csv::{Reader, ReaderBuilder, Terminator};
+use csv::{Reader, ReaderBuilder, Terminator, Trim};
 use std::io;
 use std::path::PathBuf;
 use std::process;
@@ -21,11 +21,14 @@ struct CliArgs {
     /// escape character to use for quotes when parsing. Uses `\` for TSV and `"` for CSV by default.
     escape_char: Option<String>,
     #[argh(switch, short = 'i')]
-    /// if the number of fields in records is allowed to change. Enabling makes parsing more strict.
+    /// flag which determines if the number of fields in records is allowed to change. Parsing is stricter if enabled.
     inflexible: bool,
     #[argh(option, short = 't')]
     /// record terminator to use. CSV default is `\r`, `\n` or `\r\n`. TSV default is `\n`.
     terminator: Option<String>,
+    #[argh(switch, short = 'T')]
+    /// flag to determine if non-header fields should be trimmed. Trims leading and trailing whitespace if enabled.
+    trim: Option<bool>,
     #[argh(switch, short = 'v')]
     /// version information
     version: Option<bool>,
@@ -52,7 +55,7 @@ fn get_file_location(file: &str) -> Result<PathBuf, io::Error> {
 
 fn main() -> Result<(), std::io::Error> {
     let cli: CliArgs = argh::from_env();
-    if let Some(_) = cli.version {
+    if cli.version.is_some() {
         return Ok(println!(
             "{} v{}\n{}",
             env!("CARGO_PKG_NAME"),
@@ -69,11 +72,7 @@ fn main() -> Result<(), std::io::Error> {
     let csv_path = get_file_location(file_path)?;
 
     let is_tsv = if let Some(val) = csv_path.extension() {
-        if val == "tsv" {
-            true
-        } else {
-            false
-        }
+        val == "tsv"
     } else {
         // If no file extension found, assume csv
         false
@@ -103,20 +102,31 @@ fn main() -> Result<(), std::io::Error> {
         Terminator::CRLF
     };
 
+    let trim_whitespace = if let Some(trim) = cli.trim {
+        if trim {
+            Trim::Fields
+        } else {
+            Trim::None
+        }
+    } else {
+        Trim::None
+    };
+
     let mut reader = ReaderBuilder::new()
         .delimiter(delimiter)
         .escape(Some(escape))
         .flexible(!cli.inflexible)
         .terminator(terminator)
+        .trim(trim_whitespace)
         .from_path(&csv_path)?;
     let mut reader_count = Reader::from_path(&csv_path)?;
 
     let headings = reader.headers()?.clone();
     let rows = reader_count.byte_records().count();
 
-    if let Err(_) = generate_json_fast(&mut reader, &headings, rows) {
+    if generate_json_fast(&mut reader, &headings, rows).is_err() {
         if let Err(error) = generate_json(&mut reader, &headings, rows) {
-            println!("{}", error.to_string());
+            println!("{}", error);
             process::exit(1);
         }
     }
