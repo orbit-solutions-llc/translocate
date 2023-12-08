@@ -3,6 +3,7 @@ use csv::{Reader, ReaderBuilder, Terminator, Trim};
 use std::io;
 use std::path::PathBuf;
 use std::process;
+use yansi::{Paint};
 
 mod generators;
 mod translations;
@@ -58,9 +59,9 @@ fn main() -> Result<(), std::io::Error> {
     if cli.version.is_some() {
         return Ok(println!(
             "{} v{}\n{}",
-            env!("CARGO_PKG_NAME"),
+            env!("CARGO_PKG_NAME").underline(),
             env!("CARGO_PKG_VERSION"),
-            APP_DESC
+            APP_DESC.italic()
         ));
     }
 
