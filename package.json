@@ -1,0 +1,21 @@
+{
+  "name": "translocate",
+  "version": "0.3.0",
+  "description": "translocate is a high performance converter that takes CSV translation files and outputs corresponding JSON translation files.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "csv",
+    "i18n",
+    "internationalization",
+    "json",
+    "localization"
+  ],
+  "author": "Orville Bennett",
+  "license": "MIT",
+  "dependencies": {
+    "binary-install": "^1.1.0"
+  }
+}
