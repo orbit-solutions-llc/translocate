@@ -1,10 +1,14 @@
 {
   "name": "translocate",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "translocate is a high performance converter that takes CSV translation files and outputs corresponding JSON translation files.",
-  "main": "index.js",
+  "files": ["node_scripts/**/*"],
+  "bin": {
+    "translocate": "./node_scripts/run.mjs"
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "preinstall": "node node_scripts/uninstall.mjs",
+    "postinstall": "node node_scripts/install.mjs"
   },
   "keywords": [
     "csv",

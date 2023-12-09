@@ -1,12 +1,12 @@
 import { Binary } from 'binary-install'
+import pkg_info from '../package.json' assert { type: 'json' }
 import os from 'os'
 
 async function getBinary() {
   const platform = getPlatform()
-  const pkg_info = await import('../package.json')
   const { name, version } = pkg_info
   const url = `https://github.com/orbit-solutions-llc//${name}/releases/download/v${version}/${name}-${platform}.tar.gz`
-  return new Binary(url, { name });
+  return new Binary(name, url);
 }
 
 function getPlatform() {
