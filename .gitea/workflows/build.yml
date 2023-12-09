@@ -7,13 +7,23 @@ on:
 jobs:
   build-translocate:
     runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        rust:
+          - 1.72.0
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v3
 
     - name: Run tests
       run: cargo test --verbose
+
+    - name: Install Rust
+      uses: https://github.com/dtolnay/rust-toolchain@stable
+      with:
+        toolchain: ${{ matrix.rust }}
+        components: rustfmt, clippy
 
     - name: Install dependencies
       run: |
@@ -78,15 +88,8 @@ jobs:
         cp target/x86_64-unknown-linux-gnu/release/translocate builds/translocate-linux
         tar -C builds -czvf dist/translocate-linux.tar.gz translocate-linux
 
-    - name: Cache Mac OS dependencies
-      id: cache-macos
-      uses: actions/cache@v3
-      with:
-        path: osxcross
-        key: ${{ runner.os }}-osxcross
-
     - name: Upload release
-      uses: softprops/action-gh-release@v1
+      uses: https://github.com/softprops/action-gh-release@v1
       with:
         body_path: RELEASE_NOTES.md
         files: |
@@ -97,6 +100,13 @@ jobs:
           dist/translocate-macos-x86_64.tar.gz
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Cache Mac OS dependencies
+      id: cache-macos
+      uses: https://github.com/actions/cache@v3
+      with:
+        path: osxcross
+        key: ${{ runner.os }}-osxcross
 
     # - name: Publish npm package
     #   env:

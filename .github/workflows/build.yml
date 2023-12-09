@@ -56,6 +56,13 @@ jobs:
         cp target/aarch64-apple-darwin/release/translocate builds/translocate-macos-aarch64
         tar -C builds -czvf dist/translocate-macos-aarch64.tar.gz translocate-macos-aarch64
 
+    - name: Cache Mac OS dependencies
+      id: cache-macos
+      uses: actions/cache@v3
+      with:
+        path: osxcross
+        key: ${{ runner.os }}-osxcross
+
     - name: Build Win64
       run: |
         cargo rustc --release --target=x86_64-pc-windows-gnu -- -C linker=x86_64-w64-mingw32-gcc -C strip=symbols -C lto=true -C opt-level=z -C codegen-units=1
@@ -72,17 +79,10 @@ jobs:
 
     - name: Build Linux
       run: |
-        cargo rustc --release --target=x86_64-unknown-linux-gnu -C strip=symbols -C lto=true -C opt-level=z -C codegen-units=1
+        cargo rustc --release --target=x86_64-unknown-linux-gnu -- -C strip=symbols -C lto=true -C opt-level=z -C codegen-units=1
         mkdir builds/translocate-linux
         cp target/x86_64-unknown-linux-gnu/release/translocate builds/translocate-linux
         tar -C builds -czvf dist/translocate-linux.tar.gz translocate-linux
-
-    - name: Cache Mac OS dependencies
-      id: cache-macos
-      uses: actions/cache@v3
-      with:
-        path: osxcross
-        key: ${{ runner.os }}-osxcross
 
     - name: Upload release
       uses: softprops/action-gh-release@v1
