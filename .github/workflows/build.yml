@@ -40,6 +40,7 @@ jobs:
 
     - name: Build Mac OS
       run: |
+        cp .cargo/config.toml.ci .cargo/config.toml
         export PATH="$(pwd)/osxcross/target/bin:$PATH"
         export LIBZ_SYS_STATIC=1
         export CC=o64-clang
@@ -57,21 +58,21 @@ jobs:
 
     - name: Build Win64
       run: |
-        cargo rustc --release --target=x86_64-pc-windows-gnu -- -C linker=x86_64-w64-mingw32-gcc
+        cargo rustc -C strip=symbols lto=true opt-level=z codegen-units=1 --release --target=x86_64-pc-windows-gnu -- -C linker=x86_64-w64-mingw32-gcc
         mkdir builds/translocate-win64
         cp target/x86_64-pc-windows-gnu/release/translocate.exe builds/translocate-win64
         tar -C builds -czvf dist/translocate-win64.tar.gz translocate-win64
 
     - name: Build Win32
       run: |
-        cargo rustc --release --target=i686-pc-windows-gnu -- -C linker=i686-w64-mingw32-gcc -C link-args=-mwindows -C panic=abort
+        cargo rustc -C strip=symbols lto=true opt-level=z codegen-units=1 --release --target=i686-pc-windows-gnu -- -C linker=i686-w64-mingw32-gcc -C link-args=-mwindows -C panic=abort
         mkdir builds/translocate-win32
         cp target/i686-pc-windows-gnu/release/translocate.exe builds/translocate-win32
         tar -C builds -czvf dist/translocate-win32.tar.gz translocate-win32
 
     - name: Build Linux
       run: |
-        cargo rustc --release --target=x86_64-unknown-linux-gnu
+        cargo rustc -C strip=symbols lto=true opt-level=z codegen-units=1 --release --target=x86_64-unknown-linux-gnu
         mkdir builds/translocate-linux
         cp target/x86_64-unknown-linux-gnu/release/translocate builds/translocate-linux
         tar -C builds -czvf dist/translocate-linux.tar.gz translocate-linux
@@ -86,11 +87,12 @@ jobs:
     - name: Upload release
       uses: softprops/action-gh-release@v1
       with:
-        body_path: CHANGELOG.md
+        body_path: RELEASE_NOTES.md
         files: |
           dist/translocate-win64.tar.gz
           dist/translocate-win32.tar.gz
           dist/translocate-linux.tar.gz
+          dist/translocate-macos-aarch64.tar.gz
           dist/translocate-macos-x86_64.tar.gz
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
