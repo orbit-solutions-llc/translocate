@@ -18,7 +18,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get -y install gcc-mingw-w64-x86-64 gcc-mingw-w64-i686 llvm-devel
+        sudo apt-get -y install gcc-mingw-w64-x86-64 gcc-mingw-w64-i686
         rustup target add i686-pc-windows-gnu
         rustup target add x86_64-pc-windows-gnu
         rustup target add x86_64-unknown-linux-gnu
@@ -32,21 +32,21 @@ jobs:
       run: |
         cargo rustc --release --target=x86_64-pc-windows-gnu -- -C linker=x86_64-w64-mingw32-gcc
         mkdir builds/translocate-win64
-        cp target/x86_64-pc-windows-gnu/release/swp.exe builds/translocate-win64
+        cp target/x86_64-pc-windows-gnu/release/translocate.exe builds/translocate-win64
         tar -C builds -czvf dist/translocate-win64.tar.gz translocate-win64
 
     - name: Build Win32
       run: |
         cargo rustc --release --target=i686-pc-windows-gnu -- -C linker=i686-w64-mingw32-gcc -C link-args=-mwindows -C panic=abort
         mkdir builds/translocate-win32
-        cp target/i686-pc-windows-gnu/release/swp.exe builds/translocate-win32
+        cp target/i686-pc-windows-gnu/release/translocate.exe builds/translocate-win32
         tar -C builds -czvf dist/translocate-win32.tar.gz translocate-win32
 
     - name: Build Linux
       run: |
         cargo rustc --release --target=x86_64-unknown-linux-gnu
         mkdir builds/translocate-linux
-        cp target/x86_64-unknown-linux-gnu/release/swp builds/translocate-linux
+        cp target/x86_64-unknown-linux-gnu/release/translocate builds/translocate-linux
         tar -C builds -czvf dist/translocate-linux.tar.gz translocate-linux
 
     - name: Cache Mac OS dependencies
@@ -74,7 +74,7 @@ jobs:
         export CXX=o64-clang++
         cargo build --release --target "x86_64-apple-darwin"
         mkdir builds/translocate-macos-x86_64
-        cp target/x86_64-apple-darwin/release/swp builds/translocate-macos-x86_64
+        cp target/x86_64-apple-darwin/release/translocate builds/translocate-macos-x86_64
         tar -C builds -czvf dist/translocate-macos-x86_64.tar.gz translocate-macos-x86_64
 
     - name: Upload release
