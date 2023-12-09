@@ -104,9 +104,9 @@ jobs:
         echo "//registry.npmjs.org/:_authToken=$NPM_ACCESS_TOKEN" > ".npmrc"
         npm publish
 
-    # - name: Publish cargo package
-    #   env:
-    #     CARGO_ACCESS_TOKEN: ${{ secrets.CARGO_ACCESS_TOKEN }}
-    #   run: |
-    #     cargo login "$CARGO_ACCESS_TOKEN"
-    #     cargo publish
+    - name: Publish cargo package
+      env:
+        CARGO_ACCESS_TOKEN: ${{ secrets.CARGO_ACCESS_TOKEN }}
+      run: |
+        cargo login "$CARGO_ACCESS_TOKEN"
+        cargo publish

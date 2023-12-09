@@ -7,6 +7,13 @@
   "bin": {
     "translocate": "./node_scripts/run.js"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://code.orbitsolutions.dev/orb-it-solutions/translocate.git"
+  },
+  "bugs": {
+    "url": "https://code.orbitsolutions.dev/orb-it-solutions/translocate/issues"
+  },
   "scripts": {
     "preinstall": "node node_scripts/uninstall.js",
     "postinstall": "node node_scripts/install.js"
