@@ -1,4 +1,6 @@
 # Changelog
+## v0.3.2 | *2023-12-09*
+- Create npm package for use in node or web dev projects.
 
 ## v0.3.0 | *2023-12-08*
 - Add command line option to trim whitespace from from CSV fields before conversion to JSON.
