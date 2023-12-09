@@ -40,6 +40,7 @@ jobs:
 
     - name: Build Mac OS
       run: |
+        rustc -V
         cp .cargo/config.toml.ci .cargo/config.toml
         export PATH="$(pwd)/osxcross/target/bin:$PATH"
         export LIBZ_SYS_STATIC=1
