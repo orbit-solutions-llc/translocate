@@ -34,9 +34,10 @@ struct CliArgs {
     /// version information
     version: Option<bool>,
     #[argh(positional)]
+    #[argh(default = "String::from(\"translations.csv\")")]
     /// relative or absolute path to CSV or TSV. If no file is provided, one called "translations.csv"
     /// is looked for in the current directory.
-    file: Option<String>,
+    file: String,
 }
 
 /// Checks for and uses first argument as path to file. Prints error if no CLI argument given.
@@ -162,11 +163,7 @@ fn main() -> Result<(), std::io::Error> {
         ));
     }
 
-    let file_path = if let Some(file) = &cli.file {
-        file
-    } else {
-        "translations.csv"
-    };
+    let file_path = &cli.file;
 
     let csv_path = get_file_location(file_path)?;
 
