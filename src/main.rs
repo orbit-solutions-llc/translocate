@@ -1,8 +1,8 @@
 use argh::FromArgs;
 use csv::{Reader, ReaderBuilder, Terminator, Trim};
-use std::io;
 use std::path::PathBuf;
 use std::process;
+use std::{ffi::OsStr, io};
 use yansi::Paint;
 
 mod generators;
@@ -54,22 +54,15 @@ fn get_file_location(file: &str) -> Result<PathBuf, io::Error> {
     }
 }
 
-fn get_file_reader(
-    file_path: &str,
-    delim: u8,
-    esc: u8,
-    flex: bool,
-    term: Terminator,
-    trim: Trim,
-) -> Reader<std::fs::File> {
+fn get_file_reader(file_path: &str, config: &Config) -> Reader<std::fs::File> {
     let csv_path = get_file_location(file_path).expect("Unable to create path");
 
     match ReaderBuilder::new()
-        .delimiter(delim)
-        .escape(Some(esc))
-        .flexible(flex)
-        .terminator(term)
-        .trim(trim)
+        .delimiter(config.delimiter)
+        .escape(Some(config.escape_char))
+        .flexible(config.flexible)
+        .terminator(config.terminator_char)
+        .trim(config.trim_whitespace)
         .from_path(&csv_path)
     {
         Ok(res) => res,
@@ -96,8 +89,70 @@ fn get_file_reader(
     }
 }
 
+struct Config {
+    delimiter: u8,
+    escape_char: u8,
+    flexible: bool,
+    terminator_char: Terminator,
+    trim_whitespace: Trim,
+}
+
+impl Config {
+    fn new(args: &CliArgs, file_extension: Option<&OsStr>) -> Config {
+        let is_tsv = if let Some(val) = file_extension {
+            val == "tsv"
+        } else {
+            // If no file extension found, assume csv
+            false
+        };
+
+        let delimiter = if let Some(delim) = &args.delimiter {
+            delim.as_bytes()[0]
+        } else if is_tsv {
+            b'\t'
+        } else {
+            b','
+        };
+
+        let escape_char = if let Some(esc) = &args.escape_char {
+            esc.as_bytes()[0]
+        } else if is_tsv {
+            b'\\'
+        } else {
+            b'"'
+        };
+
+        let terminator_char = if let Some(terminate) = &args.terminator {
+            Terminator::Any(terminate.as_bytes()[0])
+        } else if is_tsv {
+            Terminator::Any(b'\n')
+        } else {
+            Terminator::CRLF
+        };
+
+        let trim_whitespace = if let Some(trim) = args.trim {
+            if trim {
+                Trim::Fields
+            } else {
+                Trim::None
+            }
+        } else {
+            Trim::None
+        };
+
+        Config {
+            delimiter,
+            escape_char,
+            flexible: !args.inflexible,
+            terminator_char,
+            trim_whitespace,
+        }
+    }
+}
+
 fn main() -> Result<(), std::io::Error> {
     let cli: CliArgs = argh::from_env();
+
     if cli.version.is_some() {
         return Ok(println!(
             "{} v{}\n{}",
@@ -112,57 +167,12 @@ fn main() -> Result<(), std::io::Error> {
     } else {
         "translations.csv"
     };
+
     let csv_path = get_file_location(file_path)?;
 
-    let is_tsv = if let Some(val) = csv_path.extension() {
-        val == "tsv"
-    } else {
-        // If no file extension found, assume csv
-        false
-    };
+    let config = Config::new(&cli, csv_path.extension());
 
-    let delimiter = if let Some(delim) = cli.delimiter {
-        delim.as_bytes()[0]
-    } else if is_tsv {
-        b'\t'
-    } else {
-        b','
-    };
-
-    let escape = if let Some(esc) = cli.escape_char {
-        esc.as_bytes()[0]
-    } else if is_tsv {
-        b'\\'
-    } else {
-        b'"'
-    };
-
-    let terminator = if let Some(terminate) = cli.terminator {
-        Terminator::Any(terminate.as_bytes()[0])
-    } else if is_tsv {
-        Terminator::Any(b'\n')
-    } else {
-        Terminator::CRLF
-    };
-
-    let trim_whitespace = if let Some(trim) = cli.trim {
-        if trim {
-            Trim::Fields
-        } else {
-            Trim::None
-        }
-    } else {
-        Trim::None
-    };
-
-    let mut reader = get_file_reader(
-        file_path,
-        delimiter,
-        escape,
-        !cli.inflexible,
-        terminator,
-        trim_whitespace,
-    );
+    let mut reader = get_file_reader(file_path, &config);
 
     let mut reader_count = Reader::from_path(&csv_path)?;
 
