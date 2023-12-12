@@ -54,6 +54,48 @@ fn get_file_location(file: &str) -> Result<PathBuf, io::Error> {
     }
 }
 
+fn get_file_reader(
+    file_path: &str,
+    delim: u8,
+    esc: u8,
+    flex: bool,
+    term: Terminator,
+    trim: Trim,
+) -> Reader<std::fs::File> {
+    let csv_path = get_file_location(file_path).expect("Unable to create path");
+
+    match ReaderBuilder::new()
+        .delimiter(delim)
+        .escape(Some(esc))
+        .flexible(flex)
+        .terminator(term)
+        .trim(trim)
+        .from_path(&csv_path)
+    {
+        Ok(res) => res,
+        Err(err) => match err.kind() {
+            csv::ErrorKind::Io(io_error) => {
+                if io_error.kind() == io::ErrorKind::NotFound {
+                    println!(
+                        "{} file `{}` not found. {}",
+                        "Error:".bold().on_bright_red(),
+                        file_path.bold(),
+                        MISSING_FILE_ERR.underline()
+                    );
+                    process::exit(1)
+                } else {
+                    println!("{}", io_error);
+                    process::exit(1)
+                }
+            }
+            _ => {
+                println!("{}", err);
+                process::exit(1)
+            }
+        },
+    }
+}
+
 fn main() -> Result<(), std::io::Error> {
     let cli: CliArgs = argh::from_env();
     if cli.version.is_some() {
@@ -113,36 +155,14 @@ fn main() -> Result<(), std::io::Error> {
         Trim::None
     };
 
-    let mut reader = match ReaderBuilder::new()
-        .delimiter(delimiter)
-        .escape(Some(escape))
-        .flexible(!cli.inflexible)
-        .terminator(terminator)
-        .trim(trim_whitespace)
-        .from_path(&csv_path)
-    {
-        Ok(res) => res,
-        Err(err) => match err.kind() {
-            csv::ErrorKind::Io(io_error) => {
-                if io_error.kind() == io::ErrorKind::NotFound {
-                    println!(
-                        "{} file `{}` not found. {}",
-                        "Error:".bold().on_bright_red(),
-                        file_path.bold(),
-                        MISSING_FILE_ERR.underline()
-                    );
-                    process::exit(1)
-                } else {
-                    println!("{}", io_error);
-                    process::exit(1)
-                }
-            }
-            _ => {
-                println!("{}", err);
-                process::exit(1)
-            }
-        },
-    };
+    let mut reader = get_file_reader(
+        file_path,
+        delimiter,
+        escape,
+        !cli.inflexible,
+        terminator,
+        trim_whitespace,
+    );
 
     let mut reader_count = Reader::from_path(&csv_path)?;
 
