@@ -89,7 +89,7 @@ jobs:
         tar -C builds -czvf dist/translocate-linux.tar.gz translocate-linux
 
     - name: Upload release
-      uses: https://github.com/softprops/action-gh-release@v1
+      uses: actions/gitea-release-action@v1
       with:
         body_path: RELEASE_NOTES.md
         files: |

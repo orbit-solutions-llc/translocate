@@ -1,4 +1,5 @@
-# Release v0.3.2
+# Release v0.4.0
 
-## *2023-12-09*
-- Create npm package for use in node or web dev projects.
+## *2023-12-12*
+- Made output directory configurable
+- Modularized app logic to make it more testable.
