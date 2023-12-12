@@ -3,14 +3,14 @@ use csv::{Reader, ReaderBuilder, Terminator, Trim};
 use std::io;
 use std::path::PathBuf;
 use std::process;
-use yansi::{Paint};
+use yansi::Paint;
 
 mod generators;
 mod translations;
 use generators::{generate_json, generate_json_fast};
 
 const APP_DESC: &str = "trans·lo·cate, verb, to move from one place to another.";
-const MISSING_FILE_ERR: &str = "Please give file path as a command line argument!";
+const MISSING_FILE_ERR: &str = "Try again with the absolute (full) path to the file.";
 
 #[derive(FromArgs)]
 /// High performance CSV translation to JSON translation file transformer.
@@ -113,13 +113,37 @@ fn main() -> Result<(), std::io::Error> {
         Trim::None
     };
 
-    let mut reader = ReaderBuilder::new()
+    let mut reader = match ReaderBuilder::new()
         .delimiter(delimiter)
         .escape(Some(escape))
         .flexible(!cli.inflexible)
         .terminator(terminator)
         .trim(trim_whitespace)
-        .from_path(&csv_path)?;
+        .from_path(&csv_path)
+    {
+        Ok(res) => res,
+        Err(err) => match err.kind() {
+            csv::ErrorKind::Io(io_error) => {
+                if io_error.kind() == io::ErrorKind::NotFound {
+                    println!(
+                        "{} file `{}` not found. {}",
+                        "Error:".bold().on_bright_red(),
+                        file_path.bold(),
+                        MISSING_FILE_ERR.underline()
+                    );
+                    process::exit(1)
+                } else {
+                    println!("{}", io_error);
+                    process::exit(1)
+                }
+            }
+            _ => {
+                println!("{}", err);
+                process::exit(1)
+            }
+        },
+    };
+
     let mut reader_count = Reader::from_path(&csv_path)?;
 
     let headings = reader.headers()?.clone();
