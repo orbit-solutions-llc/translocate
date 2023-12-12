@@ -38,6 +38,27 @@ jobs:
         mkdir dist
         mkdir builds
 
+    - name: Build Win64
+      run: |
+        cargo rustc --bin translocate --release --target=x86_64-pc-windows-gnu -- -C linker=x86_64-w64-mingw32-gcc -C strip=symbols -C lto=true -C opt-level=z -C codegen-units=1
+        mkdir builds/translocate-win64
+        cp target/x86_64-pc-windows-gnu/release/translocate.exe builds/translocate-win64
+        tar -C builds -czvf dist/translocate-win64.tar.gz translocate-win64
+
+    - name: Build Win32
+      run: |
+        cargo rustc --bin translocate --release --target=i686-pc-windows-gnu -- -C linker=i686-w64-mingw32-gcc -C link-args=-mwindows -C panic=abort -C strip=symbols -C lto=true -C opt-level=z -C codegen-units=1
+        mkdir builds/translocate-win32
+        cp target/i686-pc-windows-gnu/release/translocate.exe builds/translocate-win32
+        tar -C builds -czvf dist/translocate-win32.tar.gz translocate-win32
+
+    - name: Build Linux
+      run: |
+        cargo rustc --bin translocate --release --target=x86_64-unknown-linux-gnu -- -C strip=symbols -C lto=true -C opt-level=z -C codegen-units=1
+        mkdir builds/translocate-linux
+        cp target/x86_64-unknown-linux-gnu/release/translocate builds/translocate-linux
+        tar -C builds -czvf dist/translocate-linux.tar.gz translocate-linux
+
     - name: Install Mac OS dependencies
       if: steps.cache-macos.outputs.cache-hit != 'true'
       run: |
@@ -50,43 +71,18 @@ jobs:
 
     - name: Build Mac OS
       run: |
-        rustc -V
         cp .cargo/config.toml.ci .cargo/config.toml
-        export PATH="$(pwd)/osxcross/target/bin:$PATH"
-        export LIBZ_SYS_STATIC=1
-        export CC=o64-clang
-        export CXX=o64-clang++
+        export PATH="$(pwd)/osxcross/target/bin:$PATH" LIBZ_SYS_STATIC=1
+        export CC=o64-clang CXX=o64-clang++
         cargo build --release --target=x86_64-apple-darwin
         mkdir builds/translocate-macos-x86_64
         cp target/x86_64-apple-darwin/release/translocate builds/translocate-macos-x86_64
         tar -C builds -czvf dist/translocate-macos-x86_64.tar.gz translocate-macos-x86_64
-        export CC=oa64-clang
-        export CXX=oa64-clang++
+        export CC=oa64-clang CXX=oa64-clang++
         cargo build --release --target=aarch64-apple-darwin
         mkdir builds/translocate-macos-aarch64
         cp target/aarch64-apple-darwin/release/translocate builds/translocate-macos-aarch64
         tar -C builds -czvf dist/translocate-macos-aarch64.tar.gz translocate-macos-aarch64
-
-    - name: Build Win64
-      run: |
-        cargo rustc --release --target=x86_64-pc-windows-gnu -- -C linker=x86_64-w64-mingw32-gcc -C strip=symbols -C lto=true -C opt-level=z -C codegen-units=1
-        mkdir builds/translocate-win64
-        cp target/x86_64-pc-windows-gnu/release/translocate.exe builds/translocate-win64
-        tar -C builds -czvf dist/translocate-win64.tar.gz translocate-win64
-
-    - name: Build Win32
-      run: |
-        cargo rustc --release --target=i686-pc-windows-gnu -- -C linker=i686-w64-mingw32-gcc -C link-args=-mwindows -C panic=abort -C strip=symbols -C lto=true -C opt-level=z -C codegen-units=1
-        mkdir builds/translocate-win32
-        cp target/i686-pc-windows-gnu/release/translocate.exe builds/translocate-win32
-        tar -C builds -czvf dist/translocate-win32.tar.gz translocate-win32
-
-    - name: Build Linux
-      run: |
-        cargo rustc --release --target=x86_64-unknown-linux-gnu -- -C strip=symbols -C lto=true -C opt-level=z -C codegen-units=1
-        mkdir builds/translocate-linux
-        cp target/x86_64-unknown-linux-gnu/release/translocate builds/translocate-linux
-        tar -C builds -czvf dist/translocate-linux.tar.gz translocate-linux
 
     - name: Upload release
       uses: actions/gitea-release-action@v1
@@ -107,13 +103,6 @@ jobs:
       with:
         path: osxcross
         key: ${{ runner.os }}-osxcross
-
-    - name: Publish package to npm
-      env:
-        NPM_ACCESS_TOKEN: ${{ secrets.NPM_ACCESS_TOKEN }}
-      run: |
-        echo "//registry.npmjs.org/:_authToken=$NPM_ACCESS_TOKEN" > ".npmrc"
-        npm publish
 
     - name: Publish package to gitea
       env:
