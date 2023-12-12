@@ -31,7 +31,7 @@ fn main() -> Result<(), std::io::Error> {
     let rows = reader_count.byte_records().count();
 
     if let Err(error) = run(&mut reader, &headings, rows) {
-        println!("{}", error);
+        eprintln!("{}", error);
         process::exit(1)
     }
 

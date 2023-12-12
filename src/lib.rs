@@ -128,7 +128,7 @@ pub fn get_file_reader(file_path: &str, config: &Config) -> Reader<fs::File> {
         Err(err) => match err.kind() {
             csv::ErrorKind::Io(io_error) => {
                 if io_error.kind() == io::ErrorKind::NotFound {
-                    println!(
+                    eprintln!(
                         "{} file `{}` not found. {}",
                         "Error:".bold().on_bright_red(),
                         file_path.bold(),
@@ -136,12 +136,12 @@ pub fn get_file_reader(file_path: &str, config: &Config) -> Reader<fs::File> {
                     );
                     process::exit(1)
                 } else {
-                    println!("{}", io_error);
+                    eprintln!("{}", io_error);
                     process::exit(1)
                 }
             }
             _ => {
-                println!("{}", err);
+                eprintln!("{}", err);
                 process::exit(1)
             }
         },
