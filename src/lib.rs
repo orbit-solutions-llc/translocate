@@ -21,6 +21,9 @@ pub struct CliArgs {
     #[argh(switch, short = 'i')]
     /// flag which determines if the number of fields in records is allowed to change. Parsing is stricter if enabled.
     pub inflexible: bool,
+    #[argh(option, short = 'o')]
+    /// desired output directory, if different from the current directory. Can be either a relative or absolute file path.
+    pub output_dir: Option<String>,
     #[argh(option, short = 't')]
     /// record terminator to use. CSV default is `\r`, `\n` or `\r\n`. TSV default is `\n`.
     pub terminator: Option<String>,
@@ -41,6 +44,7 @@ pub struct Config {
     delimiter: u8,
     escape_char: u8,
     flexible: bool,
+    output_dir: String,
     terminator_char: Terminator,
     trim_whitespace: Trim,
 }
@@ -70,6 +74,12 @@ impl Config {
             b'"'
         };
 
+        let output_dir = if let Some(path) = &args.output_dir {
+            path
+        } else {
+            ""
+        };
+
         let terminator_char = if let Some(terminate) = &args.terminator {
             Terminator::Any(terminate.as_bytes()[0])
         } else if is_tsv {
@@ -92,6 +102,7 @@ impl Config {
             delimiter,
             escape_char,
             flexible: !args.inflexible,
+            output_dir: output_dir.to_owned(),
             terminator_char,
             trim_whitespace,
         }
@@ -122,7 +133,7 @@ pub fn get_file_reader(file_path: &str, config: &Config) -> Reader<fs::File> {
         .flexible(config.flexible)
         .terminator(config.terminator_char)
         .trim(config.trim_whitespace)
-        .from_path(&csv_path)
+        .from_path(csv_path)
     {
         Ok(res) => res,
         Err(err) => match err.kind() {
@@ -152,9 +163,10 @@ pub fn run(
     reader: &mut Reader<fs::File>,
     headings: &StringRecord,
     rows: usize,
+    config: &Config,
 ) -> Result<(), io::Error> {
-    if generate_json_fast(reader, headings, rows).is_err() {
-        generate_json(reader, headings, rows)?
+    if generate_json_fast(reader, headings, rows, &config.output_dir).is_err() {
+        generate_json(reader, headings, rows, &config.output_dir)?
     }
     Ok(())
 }

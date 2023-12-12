@@ -30,10 +30,10 @@ fn main() -> Result<(), std::io::Error> {
     let headings = reader.headers()?.clone();
     let rows = reader_count.byte_records().count();
 
-    if let Err(error) = run(&mut reader, &headings, rows) {
+    if let Err(error) = run(&mut reader, &headings, rows, &config) {
         eprintln!("{}", error);
         process::exit(1)
     }
 
-    Ok(println!("\n🎉✨🎊 {}", "Conversion successful!".bold()))
+    Ok(println!("\n✨🎉✨ {}", "Conversion successful!".bold()))
 }

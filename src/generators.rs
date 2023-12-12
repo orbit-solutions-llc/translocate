@@ -3,6 +3,7 @@ use serde_json::{to_string_pretty, Map, Value};
 use std::collections::HashMap;
 use std::{fs::File, io::Write};
 
+use crate::get_file_location;
 use crate::translations::{FormatTranslation, LangData, Translations};
 
 const DUPE_KEY_NOTICE: &str = "translation keys overwritten during conversion.\n";
@@ -11,6 +12,7 @@ pub fn generate_json(
     reader: &mut Reader<File>,
     headings: &StringRecord,
     rows: usize,
+    output_dir: &str,
 ) -> Result<(), std::io::Error> {
     // HashMap::with_capacity_and_hasher(capacity, hasher) can be used instead, with hasher
     // that is faster https://crates.io/keywords/hasher
@@ -68,7 +70,8 @@ pub fn generate_json(
     println!("\n{times_overwritten} {DUPE_KEY_NOTICE}");
 
     for lang in dictionary.keys() {
-        let filename = format!("{lang}.json");
+        let mut filename = get_file_location(output_dir)?;
+        filename.push(&format!("{lang}.json"));
         let mut file = File::create(filename)?;
         if let Some(json) = dictionary.get(lang) {
             writeln!(
@@ -77,7 +80,7 @@ pub fn generate_json(
                 to_string_pretty(json).expect("Error writing {lang}.json.")
             )?;
         }
-        println!("{lang}.json written to current directory.");
+        println!("{lang}.json written to output directory.");
     }
 
     Ok(())
@@ -87,6 +90,7 @@ pub fn generate_json_fast(
     reader: &mut Reader<File>,
     headings: &StringRecord,
     rows: usize,
+    output_dir: &str,
 ) -> Result<(), std::io::Error> {
     // HashMap::with_capacity_and_hasher(capacity, hasher) can be used instead, with hasher
     // that is faster https://crates.io/keywords/hasher
@@ -141,7 +145,8 @@ pub fn generate_json_fast(
     println!("\n{times_overwritten} {DUPE_KEY_NOTICE}");
 
     for lang in dictionary.keys() {
-        let filename = format!("{lang}.json");
+        let mut filename = get_file_location(output_dir)?;
+        filename.push(&format!("{lang}.json"));
         let mut file = File::create(filename)?;
         if let Some(json) = dictionary.get(lang) {
             writeln!(
@@ -150,7 +155,7 @@ pub fn generate_json_fast(
                 to_string_pretty(json).expect("Error writing {lang}.json.")
             )?;
         }
-        println!("{lang}.json written to current directory.");
+        println!("{lang}.json written to output directory.");
     }
 
     Ok(())
