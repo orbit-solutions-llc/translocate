@@ -175,26 +175,33 @@ pub fn generate_json_fast(
 }
 
 #[cfg(test)]
-mod tests {
+mod generator_tests {
     use super::generate_json_fast;
     use crate::get_file_location;
     use csv::{Reader, ReaderBuilder, StringRecord};
     use std::fs::{self, File};
     use std::io::Write;
 
-    const _CSV_ALL_LANG: &'static str = "\
-id,da_DK,de_DE,en_US,es_ES,fr_FR,it_IT,text_domain,nl_NL,pt_BR,pt_PT,sv_SE,
+    const CSV_ALL_LANG: &'static str = "\
+id,da_DK,de_DE,en_US,es_ES,fr_FR,it_IT,TextDomain,nl_NL,pt_BR,pt_PT,sv_SE,
 new.translation,ny oversættelse,neue Übersetzung,new translation,nueva traducción,nouvelle traduction,nuova traduzione,,nieuwe vertaling,nova tradução,nova tradução,ny översättning,
 ";
-    const CSV_ONE_ROW: &'static str = "\
+    const CSV_ROW_1: &'static str = "\
 id,da_DK,
 new.translation,ny oversættelse,
 ";
 
-    const CSV_TWO_ROW: &'static str = "\
+    const CSV_ROW_2: &'static str = "\
 id,da_DK,
 new.translation,ny oversættelse,
 new.translation,,
+";
+
+    const CSV_ROW_3: &'static str = "\
+id,da_DK,
+new.translation,ny oversættelse,
+new.translation,,
+new.translation,nyoversættelse,
 ";
 
     fn generate_csv_reader(
@@ -219,10 +226,59 @@ new.translation,,
     }
 
     #[test]
-    fn it_writes_a_file_to_the_current_directory() {
+    fn it_writes_all_columns_except_textdomain_to_a_file() {
+        let test_file_path = "test_file0.csv";
+        let illegal_file = "TextDomain.json";
+        let lang_file_list = [
+            "da_DK.json",
+            "de_DE.json",
+            "en_US.json",
+            "es_ES.json",
+            "fr_FR.json",
+            "it_IT.json",
+            "nl_NL.json",
+            "pt_BR.json",
+            "pt_PT.json",
+            "sv_SE.json",
+        ];
+        let translations = [
+            "ny oversættelse",
+            "neue Übersetzung",
+            "new translation",
+            "nueva traducción",
+            "nouvelle traduction",
+            "nuova traduzione",
+            "nieuwe vertaling",
+            "nova tradução",
+            "nova tradução",
+            "ny översättning",
+        ];
+        let mut test_conf = generate_csv_reader(test_file_path, CSV_ALL_LANG);
+
+        generate_json_fast(&mut test_conf.0, &test_conf.1, test_conf.2, "").unwrap();
+
+        for (idx, file) in lang_file_list.iter().enumerate() {
+            let trans = fs::read_to_string(file)
+                .unwrap()
+                .replace('\n', "")
+                .replace("  ", "");
+            let trans = trans.trim();
+            fs::remove_file(file).unwrap();
+
+            assert!(File::open(illegal_file).is_err());
+            assert_eq!(
+                trans,
+                format!("{{\"new.translation\": \"{}\"}}", translations[idx])
+            );
+        }
+        fs::remove_file(test_file_path).unwrap();
+    }
+
+    #[test]
+    fn it_creates_a_new_file_for_the_given_language() {
         let test_file_path = "test_file1.csv";
         let lang_file_path = "da_DK.json";
-        let mut test_conf = generate_csv_reader(test_file_path, CSV_ONE_ROW);
+        let mut test_conf = generate_csv_reader(test_file_path, CSV_ROW_1);
 
         generate_json_fast(&mut test_conf.0, &test_conf.1, test_conf.2, "").unwrap();
 
@@ -241,7 +297,7 @@ new.translation,,
     fn it_does_not_overwrite_existing_key_with_empty_value() {
         let test_file_path = "test_file2.csv";
         let lang_file_path = "da_DK.json";
-        let mut test_conf = generate_csv_reader(test_file_path, CSV_TWO_ROW);
+        let mut test_conf = generate_csv_reader(test_file_path, CSV_ROW_2);
 
         generate_json_fast(&mut test_conf.0, &test_conf.1, test_conf.2, "").unwrap();
 
@@ -256,4 +312,22 @@ new.translation,,
         assert_eq!(trans, "{\"new.translation\": \"ny oversættelse\"}");
     }
 
+    #[test]
+    fn it_overwrites_existing_key_with_new_value() {
+        let test_file_path = "test_file3.csv";
+        let lang_file_path = "da_DK.json";
+        let mut test_conf = generate_csv_reader(test_file_path, CSV_ROW_3);
+
+        generate_json_fast(&mut test_conf.0, &test_conf.1, test_conf.2, "").unwrap();
+
+        let trans = fs::read_to_string(lang_file_path)
+            .unwrap()
+            .replace('\n', "")
+            .replace("  ", "");
+        let trans = trans.trim();
+        fs::remove_file(test_file_path).unwrap();
+        fs::remove_file(lang_file_path).unwrap();
+
+        assert_eq!(trans, "{\"new.translation\": \"nyoversættelse\"}");
+    }
 }
