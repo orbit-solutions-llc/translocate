@@ -4,6 +4,7 @@ use csv::{Reader, StringRecord};
 use serde_json::{to_string_pretty, Map, Value};
 use std::collections::HashMap;
 use std::{fs::File, io::Write};
+use yansi::Paint;
 
 const DUPE_KEY_NOTICE: &str = "translation keys overwritten during conversion.\n";
 
@@ -34,13 +35,17 @@ pub fn generate_json(
                         LangData::Integer(v) => format!("{v}"),
                         LangData::String(v) => v.to_owned(),
                     };
+                    // Only replace value below if there's an actual value.
+                    if value.is_empty() {
+                        continue;
+                    };
 
                     let old_val = lang_map.insert(kv.0.into(), value.into());
                     if let Some(_val) = old_val {
                         if !overwrote_data {
-                            // println!("Overwrite previous entry for \"{}\".\nOld: {:#?}\nNew {:#?}", kv.0, val, kv.1);
                             println!(
-                                "Warning: key \"{}\" overwritten by record {} (line {}).",
+                                "{} key \"{}\" overwritten by record {} (line {}).",
+                                "Warning:".on_bright_yellow().italic(),
                                 kv.0,
                                 idx + 1,
                                 idx + 1
@@ -112,14 +117,23 @@ pub fn generate_json_fast(
                     None => "",
                 };
 
+                // Checking if there's already a language map entry for this translation key
+                // and replace it if there is.
                 if let Some(lang_map) = dictionary.get_mut(heading) {
+                    // but only replace if there's an actual value.
+                    if value.is_empty() {
+                        continue;
+                    };
+
                     let old_val = lang_map.insert(record[0].into(), value.into());
                     if let Some(_val) = old_val {
                         if !overwrote_data {
-                            // println!("Overwrite previous entry for \"{}\".\nOld: {:#?}\nNew {:#?}", kv.0, val, kv.1);
                             println!(
-                                "Warning: key \"{}\" overwritten by record {} (line {}).",
-                                &record[0], idx, idx
+                                "{} key \"{}\" overwritten by record {} (line {}).",
+                                "Warning:".on_bright_yellow().italic(),
+                                &record[0],
+                                idx,
+                                idx
                             );
                             overwrote_data = true;
                             times_overwritten += 1;
