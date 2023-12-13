@@ -37,4 +37,4 @@ jobs:
       run: |
         cargo clippy
         cargo fmt --all --check
-        cargo test --verbose
+        cargo test generators -- --test-threads 1

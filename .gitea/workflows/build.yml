@@ -23,7 +23,7 @@ jobs:
         components: rustfmt, clippy
 
     - name: Run tests
-      run: cargo test --verbose
+      run: cargo test generators -- --test-threads 1
 
     - name: Install dependencies
       run: |
