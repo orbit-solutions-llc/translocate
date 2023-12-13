@@ -1,10 +1,9 @@
+use crate::get_file_location;
+use crate::translations::{FormatTranslation, LangData, Translations};
 use csv::{Reader, StringRecord};
 use serde_json::{to_string_pretty, Map, Value};
 use std::collections::HashMap;
 use std::{fs::File, io::Write};
-
-use crate::get_file_location;
-use crate::translations::{FormatTranslation, LangData, Translations};
 
 const DUPE_KEY_NOTICE: &str = "translation keys overwritten during conversion.\n";
 
@@ -159,4 +158,88 @@ pub fn generate_json_fast(
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::generate_json_fast;
+    use crate::get_file_location;
+    use csv::{Reader, ReaderBuilder, StringRecord};
+    use std::fs::{self, File};
+    use std::io::Write;
+
+    const _CSV_ALL_LANG: &'static str = "\
+id,da_DK,de_DE,en_US,es_ES,fr_FR,it_IT,text_domain,nl_NL,pt_BR,pt_PT,sv_SE,
+new.translation,ny oversættelse,neue Übersetzung,new translation,nueva traducción,nouvelle traduction,nuova traduzione,,nieuwe vertaling,nova tradução,nova tradução,ny översättning,
+";
+    const CSV_ONE_ROW: &'static str = "\
+id,da_DK,
+new.translation,ny oversættelse,
+";
+
+    const CSV_TWO_ROW: &'static str = "\
+id,da_DK,
+new.translation,ny oversættelse,
+new.translation,,
+";
+
+    fn generate_csv_reader(
+        input_filename: &str,
+        input_data: &str,
+    ) -> (Reader<File>, StringRecord, usize) {
+        File::options()
+            .write(true)
+            .create(true)
+            .open(input_filename)
+            .unwrap()
+            .write_all(input_data.as_bytes())
+            .unwrap();
+        let file = get_file_location(input_filename).unwrap();
+        let mut reader = ReaderBuilder::new().from_path(&file).unwrap();
+        let mut reader_count = Reader::from_path(&file).unwrap();
+
+        let headings = reader.headers().unwrap().clone();
+        let rows = reader_count.byte_records().count();
+
+        (reader, headings, rows)
+    }
+
+    #[test]
+    fn it_writes_a_file_to_the_current_directory() {
+        let test_file_path = "test_file1.csv";
+        let lang_file_path = "da_DK.json";
+        let mut test_conf = generate_csv_reader(test_file_path, CSV_ONE_ROW);
+
+        generate_json_fast(&mut test_conf.0, &test_conf.1, test_conf.2, "").unwrap();
+
+        let trans = fs::read_to_string(lang_file_path)
+            .unwrap()
+            .replace('\n', "")
+            .replace("  ", "");
+        let trans = trans.trim();
+        fs::remove_file(test_file_path).unwrap();
+        fs::remove_file(lang_file_path).unwrap();
+
+        assert_eq!(trans, "{\"new.translation\": \"ny oversættelse\"}");
+    }
+
+    #[test]
+    fn it_does_not_overwrite_existing_key_with_empty_value() {
+        let test_file_path = "test_file2.csv";
+        let lang_file_path = "da_DK.json";
+        let mut test_conf = generate_csv_reader(test_file_path, CSV_TWO_ROW);
+
+        generate_json_fast(&mut test_conf.0, &test_conf.1, test_conf.2, "").unwrap();
+
+        let trans = fs::read_to_string(lang_file_path)
+            .unwrap()
+            .replace('\n', "")
+            .replace("  ", "");
+        let trans = trans.trim();
+        fs::remove_file(test_file_path).unwrap();
+        fs::remove_file(lang_file_path).unwrap();
+
+        assert_eq!(trans, "{\"new.translation\": \"ny oversættelse\"}");
+    }
+
 }
