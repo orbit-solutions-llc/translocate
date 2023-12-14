@@ -185,3 +185,27 @@ mod get_file_location_tests {
         assert!(!path.starts_with(cwd.to_str().unwrap()));
     }
 }
+
+#[cfg(test)]
+mod get_file_reader_tests {
+    use csv::{Terminator, Trim};
+
+    use crate::{get_file_reader, Config};
+
+    const CONFIG: Config = Config {
+        delimiter: b',',
+        escape_char: b'"',
+        flexible: true,
+        output_dir: "",
+        terminator_char: Terminator::CRLF,
+        trim_whitespace: Trim::Fields,
+    };
+
+    #[test]
+    fn it_has_file_reader_that_is_configured_to_have_csv_headers() {
+        let path = get_file_reader("package.json", &CONFIG).unwrap();
+
+        assert!(path.has_headers());
+    }
+
+}
