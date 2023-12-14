@@ -37,17 +37,17 @@ pub struct CliArgs {
     pub file: String,
 }
 
-pub struct Config {
+pub struct Config<'a> {
     delimiter: u8,
     escape_char: u8,
     flexible: bool,
-    output_dir: String,
+    output_dir: &'a str,
     terminator_char: Terminator,
     trim_whitespace: Trim,
 }
 
-impl Config {
-    pub fn new(args: &CliArgs, file_extension: Option<&OsStr>) -> Config {
+impl<'a> Config<'a> {
+    pub fn new(args: &'a CliArgs, file_extension: Option<&OsStr>) -> Config<'a> {
         let is_tsv = if let Some(val) = file_extension {
             val == "tsv"
         } else {
@@ -99,14 +99,17 @@ impl Config {
             delimiter,
             escape_char,
             flexible: !args.inflexible,
-            output_dir: output_dir.to_owned(),
+            output_dir: output_dir,
             terminator_char,
             trim_whitespace,
         }
     }
 }
 
-/// Checks for and uses first argument as path to file. Prints error if no CLI argument given.
+/// Takes a path argument and returns a representation of that file system
+/// location (`PathBuf`), or an `io::Error` if this representation can't be created.
+///
+/// * `file` - string slice which is the path to a file system location.
 pub fn get_file_location(file: &str) -> Result<PathBuf, io::Error> {
     let cwd = std::env::current_dir()?;
     // Get cli arguments, then make sure an arg was actually passed
@@ -139,8 +142,8 @@ pub fn run(
     rows: usize,
     config: &Config,
 ) -> Result<(), io::Error> {
-    if generate_json_fast(reader, headings, rows, &config.output_dir).is_err() {
-        generate_json(reader, headings, rows, &config.output_dir)?
+    if generate_json_fast(reader, headings, rows, config.output_dir).is_err() {
+        generate_json(reader, headings, rows, config.output_dir)?
     }
     Ok(())
 }
