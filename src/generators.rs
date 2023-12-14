@@ -45,7 +45,7 @@ pub fn generate_json(
                         if !overwrote_data {
                             println!(
                                 "{} key \"{}\" overwritten by record {} (line {}).",
-                                "Warning:".on_bright_yellow().italic(),
+                                "Warning:".on_yellow().italic(),
                                 kv.0,
                                 idx + 1,
                                 idx + 1
@@ -130,7 +130,7 @@ pub fn generate_json_fast(
                         if !overwrote_data {
                             println!(
                                 "{} key \"{}\" overwritten by record {} (line {}).",
-                                "Warning:".on_bright_yellow().italic(),
+                                "Warning:".on_yellow().italic(),
                                 &record[0],
                                 idx,
                                 idx
