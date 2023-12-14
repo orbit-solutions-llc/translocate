@@ -187,18 +187,18 @@ id,da_DK,de_DE,en_US,es_ES,fr_FR,it_IT,TextDomain,nl_NL,pt_BR,pt_PT,sv_SE,
 new.translation,ny oversættelse,neue Übersetzung,new translation,nueva traducción,nouvelle traduction,nuova traduzione,,nieuwe vertaling,nova tradução,nova tradução,ny översättning,
 ";
     const CSV_ROW_1: &'static str = "\
-id,da_DK,
+id,da_DK_1,
 new.translation,ny oversættelse,
 ";
 
     const CSV_ROW_2: &'static str = "\
-id,da_DK,
+id,da_DK_2,
 new.translation,ny oversættelse,
 new.translation,,
 ";
 
     const CSV_ROW_3: &'static str = "\
-id,da_DK,
+id,da_DK_3,
 new.translation,ny oversættelse,
 new.translation,,
 new.translation,nyoversættelse,
@@ -277,7 +277,7 @@ new.translation,nyoversættelse,
     #[test]
     fn it_creates_a_new_file_for_the_given_language() {
         let test_file_path = "test_file1.csv";
-        let lang_file_path = "da_DK.json";
+        let lang_file_path = "da_DK_1.json";
         let mut test_conf = generate_csv_reader(test_file_path, CSV_ROW_1);
 
         generate_json_fast(&mut test_conf.0, &test_conf.1, test_conf.2, "").unwrap();
@@ -296,7 +296,7 @@ new.translation,nyoversættelse,
     #[test]
     fn it_does_not_overwrite_existing_key_with_empty_value() {
         let test_file_path = "test_file2.csv";
-        let lang_file_path = "da_DK.json";
+        let lang_file_path = "da_DK_2.json";
         let mut test_conf = generate_csv_reader(test_file_path, CSV_ROW_2);
 
         generate_json_fast(&mut test_conf.0, &test_conf.1, test_conf.2, "").unwrap();
@@ -315,7 +315,7 @@ new.translation,nyoversættelse,
     #[test]
     fn it_overwrites_existing_key_with_new_value() {
         let test_file_path = "test_file3.csv";
-        let lang_file_path = "da_DK.json";
+        let lang_file_path = "da_DK_3.json";
         let mut test_conf = generate_csv_reader(test_file_path, CSV_ROW_3);
 
         generate_json_fast(&mut test_conf.0, &test_conf.1, test_conf.2, "").unwrap();
