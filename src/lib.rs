@@ -147,3 +147,41 @@ pub fn run(
     }
     Ok(())
 }
+
+#[cfg(test)]
+mod get_file_location_tests {
+    use crate::get_file_location;
+
+    #[test]
+    #[cfg(not(target_os = "windows"))]
+    fn it_turns_a_relative_location_into_a_full_path() {
+        let cwd = std::env::current_dir().unwrap();
+        let path = get_file_location("").unwrap();
+        let path2 = get_file_location("./").unwrap();
+
+        assert!(path.has_root());
+        assert!(path2.has_root());
+        assert!(path.starts_with(cwd.to_str().unwrap()));
+        assert!(path2.starts_with(cwd.to_str().unwrap()));
+        assert_eq!(path, path2);
+        assert_eq!(path, cwd);
+    }
+
+    #[test]
+    #[cfg(not(target_os = "windows"))]
+    fn it_does_not_append_the_current_directory_to_an_absolute_path() {
+        let cwd = std::env::current_dir().unwrap();
+        let path = get_file_location("/home").unwrap();
+
+        assert!(!path.starts_with(cwd.to_str().unwrap()));
+    }
+
+    #[test]
+    #[cfg(target_os = "windows")]
+    fn it_does_not_append_the_current_directory_to_an_absolute_path_in_windows() {
+        let cwd = std::env::current_dir().unwrap();
+        let path = get_file_location("A:\\floppy").unwrap();
+
+        assert!(!path.starts_with(cwd.to_str().unwrap()));
+    }
+}
