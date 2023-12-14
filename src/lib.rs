@@ -4,10 +4,7 @@ mod translations;
 use argh::FromArgs;
 use csv::{Reader, ReaderBuilder, StringRecord, Terminator, Trim};
 use generators::{generate_json, generate_json_fast};
-use std::{ffi::OsStr, fs, io, path::PathBuf, process};
-use yansi::Paint;
-
-const MISSING_FILE_ERR: &str = "Try again with the absolute (full) path to the file.";
+use std::{ffi::OsStr, fs, io, path::PathBuf};
 
 #[derive(FromArgs)]
 /// High performance CSV translation to JSON translation file transformer.
@@ -124,39 +121,16 @@ pub fn get_file_location(file: &str) -> Result<PathBuf, io::Error> {
     }
 }
 
-pub fn get_file_reader(file_path: &str, config: &Config) -> Reader<fs::File> {
+pub fn get_file_reader(file_path: &str, config: &Config) -> Result<Reader<fs::File>, csv::Error> {
     let csv_path = get_file_location(file_path).expect("Unable to create path");
 
-    match ReaderBuilder::new()
+    ReaderBuilder::new()
         .delimiter(config.delimiter)
         .escape(Some(config.escape_char))
         .flexible(config.flexible)
         .terminator(config.terminator_char)
         .trim(config.trim_whitespace)
         .from_path(csv_path)
-    {
-        Ok(res) => res,
-        Err(err) => match err.kind() {
-            csv::ErrorKind::Io(io_error) => {
-                if io_error.kind() == io::ErrorKind::NotFound {
-                    eprintln!(
-                        "{} file `{}` not found. {}",
-                        "Error:".bold().on_bright_red(),
-                        file_path.bold(),
-                        MISSING_FILE_ERR.underline()
-                    );
-                    process::exit(1)
-                } else {
-                    eprintln!("{}", io_error);
-                    process::exit(1)
-                }
-            }
-            _ => {
-                eprintln!("{}", err);
-                process::exit(1)
-            }
-        },
-    }
 }
 
 pub fn run(
