@@ -194,7 +194,7 @@ mod get_file_location_tests {
     #[cfg(target_os = "windows")]
     fn it_does_not_append_the_current_directory_to_an_absolute_path_in_windows() {
         let cwd = std::env::current_dir().unwrap();
-        let path = get_file_location("A:\\floppy").unwrap();
+        let path = get_file_location(r"A:\floppy").unwrap();
 
         assert!(!path.starts_with(cwd.to_str().unwrap()));
     }
