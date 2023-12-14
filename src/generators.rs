@@ -177,10 +177,19 @@ pub fn generate_json_fast(
 #[cfg(test)]
 mod generator_tests {
     use super::generate_json_fast;
-    use crate::get_file_location;
-    use csv::{Reader, ReaderBuilder, StringRecord};
+    use crate::{get_file_location, get_file_reader, Config};
+    use csv::{Reader, StringRecord, Terminator, Trim};
     use std::fs::{self, File};
     use std::io::Write;
+
+    const CONFIG: Config = Config {
+        delimiter: b',',
+        escape_char: b'"',
+        flexible: true,
+        output_dir: "",
+        terminator_char: Terminator::CRLF,
+        trim_whitespace: Trim::Fields,
+    };
 
     const CSV_ALL_LANG: &'static str = "\
 id,da_DK,de_DE,en_US,es_ES,fr_FR,it_IT,TextDomain,nl_NL,pt_BR,pt_PT,sv_SE,
@@ -215,8 +224,8 @@ new.translation,nyoversættelse,
             .unwrap()
             .write_all(input_data.as_bytes())
             .unwrap();
+        let mut reader = get_file_reader(input_filename, &CONFIG).unwrap();
         let file = get_file_location(input_filename).unwrap();
-        let mut reader = ReaderBuilder::new().from_path(&file).unwrap();
         let mut reader_count = Reader::from_path(&file).unwrap();
 
         let headings = reader.headers().unwrap().clone();

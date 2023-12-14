@@ -221,5 +221,4 @@ mod get_file_reader_tests {
 
         assert!(path.has_headers());
     }
-
 }
