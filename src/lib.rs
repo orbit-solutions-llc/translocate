@@ -5,6 +5,7 @@ use argh::FromArgs;
 use csv::{Reader, ReaderBuilder, StringRecord, Terminator, Trim};
 use generators::{generate_json, generate_json_fast};
 use std::{ffi::OsStr, fs, io, path::PathBuf};
+use yansi::Paint;
 
 #[derive(FromArgs)]
 /// High performance CSV translation to JSON translation file transformer.
@@ -106,16 +107,29 @@ impl<'a> Config<'a> {
     }
 }
 
+fn special_character_check(char: &str, text: &str) {
+    if text.contains(char) {
+        println!(
+            "{} Path {} contained the literal '{}' character.\n{}\n{}\n",
+            "Warning:".on_yellow(),
+            text.underline(),
+            char.bold(),
+            "This was not expanded by your shell and will be treated as a filename.",
+            "If unintentional, try not wrapping your path inside of quotes.".on_yellow(),
+        );
+    }
+}
+
 /// Takes a path argument and returns a representation of that file system
 /// location (`PathBuf`), or an `io::Error` if this representation can't be created.
 ///
 /// * `file` - string slice which is the path to a file system location.
 pub fn get_file_location(file: &str) -> Result<PathBuf, io::Error> {
     let cwd = std::env::current_dir()?;
-    // Get cli arguments, then make sure an arg was actually passed
-    let path = file;
+    special_character_check("~", file);
+    special_character_check("$", file);
 
-    let full_path = PathBuf::from(path);
+    let full_path = PathBuf::from(file);
 
     if full_path.has_root() {
         Ok(full_path)
