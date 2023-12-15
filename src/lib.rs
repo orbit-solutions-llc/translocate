@@ -38,16 +38,27 @@ pub struct CliArgs {
     pub file: String,
 }
 
+/// Configuration struct that stores parsed command line options
+#[doc(hidden)]
 pub struct Config<'a> {
+    /// field delimiter to use when parsing. Uses `\t` for TSV and `,` for CSV by default.
     delimiter: u8,
+    /// escape character to use for quotes when parsing. Uses `\` for TSV and `"` for CSV by default.
     escape_char: u8,
+    /// flag which determines if the number of fields in records is allowed to change. Parsing is looser if enabled.
     flexible: bool,
+    /// desired output directory, if different from the current directory. Can be either a relative or absolute file path.
     output_dir: &'a str,
+    /// record terminator to use. CSV default is `\r`, `\n` or `\r\n`. TSV default is `\n`.
     terminator_char: Terminator,
+    /// flag to determine if non-header fields should be trimmed. Trims leading and trailing whitespace if enabled.
     trim_whitespace: Trim,
 }
 
+#[doc(hidden)]
 impl<'a> Config<'a> {
+    /// Parses provided command line arguments and returns a configuration struct
+    /// whose options determine how the input CSV file is read or processed.
     pub fn new(args: &'a CliArgs, file_extension: Option<&OsStr>) -> Config<'a> {
         let is_tsv = if let Some(val) = file_extension {
             val == "tsv"
@@ -100,13 +111,15 @@ impl<'a> Config<'a> {
             delimiter,
             escape_char,
             flexible: !args.inflexible,
-            output_dir: output_dir,
+            output_dir,
             terminator_char,
             trim_whitespace,
         }
     }
 }
 
+/// Checks if special command line shell characters like "~" or "$", which
+/// are used for expansions are present anywhere in a text string.
 fn special_character_check(char: &str, text: &str) {
     if text.contains(char) {
         println!(
@@ -138,6 +151,10 @@ pub fn get_file_location(file: &str) -> Result<PathBuf, io::Error> {
     }
 }
 
+/// Returns a configured CSV reader for the specified file, or an error.
+/// 
+/// * `file_path` - relative or absolute path to file
+/// * `config` - parsed command line configuration
 pub fn get_file_reader(file_path: &str, config: &Config) -> Result<Reader<fs::File>, csv::Error> {
     let csv_path = get_file_location(file_path).expect("Unable to create path");
 
@@ -150,6 +167,7 @@ pub fn get_file_reader(file_path: &str, config: &Config) -> Result<Reader<fs::Fi
         .from_path(csv_path)
 }
 
+/// Runs function to generate JSON translation files.
 pub fn run(
     reader: &mut Reader<fs::File>,
     headings: &StringRecord,
