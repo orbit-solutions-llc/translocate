@@ -110,12 +110,12 @@ impl<'a> Config<'a> {
 fn special_character_check(char: &str, text: &str) {
     if text.contains(char) {
         println!(
-            "{} Path {} contained the literal '{}' character.\n{}\n{}\n",
-            "Warning:".on_yellow(),
+            "{} Path {} contained the literal '{}' character {}\n{}\n",
+            "Warning:".on_yellow().blink(),
             text.underline(),
             char.bold(),
-            "This was not expanded by your shell and will be treated as a filename.",
-            "If unintentional, try not wrapping your path inside of quotes.".on_yellow(),
+            "and will be treated as a filename.",
+            "If this was not intended, try again without wrapping the path inside of quotes to allow expansion by your shell.".bold(),
         );
     }
 }
