@@ -195,6 +195,7 @@ mod generator_tests {
 id,da_DK,de_DE,en_US,es_ES,fr_FR,it_IT,TextDomain,nl_NL,pt_BR,pt_PT,sv_SE,
 new.translation,ny oversættelse,neue Übersetzung,new translation,nueva traducción,nouvelle traduction,nuova traduzione,,nieuwe vertaling,nova tradução,nova tradução,ny översättning,
 ";
+
     const CSV_ROW_1: &'static str = "\
 id,da_DK_1,
 new.translation,ny oversættelse,
@@ -213,9 +214,20 @@ new.translation,,
 new.translation,nyoversættelse,
 ";
 
+    const SSV_ROW_1: &'static str = "\
+id;da_DK_s;
+new.translation;ny oversættelse;
+";
+
+    const TSV_ROW_1: &'static str = "\
+id\tda_DK_t\t
+new.translation\tny oversættelse\t
+";
+
     fn generate_csv_reader(
         input_filename: &str,
         input_data: &str,
+        config: &Config
     ) -> (Reader<File>, StringRecord, usize) {
         File::options()
             .write(true)
@@ -224,7 +236,7 @@ new.translation,nyoversættelse,
             .unwrap()
             .write_all(input_data.as_bytes())
             .unwrap();
-        let mut reader = get_file_reader(input_filename, &CONFIG).unwrap();
+        let mut reader = get_file_reader(input_filename, config).unwrap();
         let file = get_file_location(input_filename).unwrap();
         let mut reader_count = Reader::from_path(&file).unwrap();
 
@@ -262,7 +274,7 @@ new.translation,nyoversættelse,
             "nova tradução",
             "ny översättning",
         ];
-        let mut test_conf = generate_csv_reader(test_file_path, CSV_ALL_LANG);
+        let mut test_conf = generate_csv_reader(test_file_path, CSV_ALL_LANG, &CONFIG);
 
         generate_json_fast(&mut test_conf.0, &test_conf.1, test_conf.2, "").unwrap();
 
@@ -284,10 +296,50 @@ new.translation,nyoversættelse,
     }
 
     #[test]
-    fn it_creates_a_new_file_for_the_given_language() {
+    fn it_creates_a_new_json_file_for_the_given_language_from_tsv() {
+        let test_file_path = "test_file_1.tsv";
+        let lang_file_path = "da_DK_t.json";
+        let config = &Config { delimiter: b'\t', ..CONFIG };
+        let mut test_conf = generate_csv_reader(test_file_path, TSV_ROW_1, config);
+
+        generate_json_fast(&mut test_conf.0, &test_conf.1, test_conf.2, "").unwrap();
+
+        let trans = fs::read_to_string(lang_file_path)
+            .unwrap()
+            .replace('\n', "")
+            .replace("  ", "");
+        let trans = trans.trim();
+        fs::remove_file(test_file_path).unwrap();
+        fs::remove_file(lang_file_path).unwrap();
+
+        assert_eq!(trans, "{\"new.translation\": \"ny oversættelse\"}");
+    }
+
+    #[test]
+    fn it_creates_a_new_json_file_for_the_given_language_from_ssv() {
+        let test_file_path = "test_file_1.ssv";
+        let lang_file_path = "da_DK_s.json";
+        let config = &Config { delimiter: b';', ..CONFIG };
+        let mut test_conf = generate_csv_reader(test_file_path, SSV_ROW_1, config);
+
+        generate_json_fast(&mut test_conf.0, &test_conf.1, test_conf.2, "").unwrap();
+
+        let trans = fs::read_to_string(lang_file_path)
+            .unwrap()
+            .replace('\n', "")
+            .replace("  ", "");
+        let trans = trans.trim();
+        fs::remove_file(test_file_path).unwrap();
+        fs::remove_file(lang_file_path).unwrap();
+
+        assert_eq!(trans, "{\"new.translation\": \"ny oversættelse\"}");
+    }
+
+    #[test]
+    fn it_creates_a_new_json_file_for_the_given_language_from_csv() {
         let test_file_path = "test_file1.csv";
         let lang_file_path = "da_DK_1.json";
-        let mut test_conf = generate_csv_reader(test_file_path, CSV_ROW_1);
+        let mut test_conf = generate_csv_reader(test_file_path, CSV_ROW_1, &CONFIG);
 
         generate_json_fast(&mut test_conf.0, &test_conf.1, test_conf.2, "").unwrap();
 
@@ -306,7 +358,7 @@ new.translation,nyoversættelse,
     fn it_does_not_overwrite_existing_key_with_empty_value() {
         let test_file_path = "test_file2.csv";
         let lang_file_path = "da_DK_2.json";
-        let mut test_conf = generate_csv_reader(test_file_path, CSV_ROW_2);
+        let mut test_conf = generate_csv_reader(test_file_path, CSV_ROW_2, &CONFIG);
 
         generate_json_fast(&mut test_conf.0, &test_conf.1, test_conf.2, "").unwrap();
 
@@ -325,7 +377,7 @@ new.translation,nyoversættelse,
     fn it_overwrites_existing_key_with_new_value() {
         let test_file_path = "test_file3.csv";
         let lang_file_path = "da_DK_3.json";
-        let mut test_conf = generate_csv_reader(test_file_path, CSV_ROW_3);
+        let mut test_conf = generate_csv_reader(test_file_path, CSV_ROW_3, &CONFIG);
 
         generate_json_fast(&mut test_conf.0, &test_conf.1, test_conf.2, "").unwrap();
 
