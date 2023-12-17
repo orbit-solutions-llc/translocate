@@ -1,4 +1,4 @@
-import { Binary } from './simple-binary-install.js'
+import { Binary } from 'simple-binary-install'
 import pkg_info from '../package.json' assert { type: 'json' }
 import os from 'os'
 

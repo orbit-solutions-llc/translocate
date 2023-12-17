@@ -28,7 +28,6 @@
   "author": "Orville Bennett",
   "license": "MIT",
   "dependencies": {
-    "axios": "1.6.1",
-    "tar": "6.2.0"
+    "simple-binary-install": "0.1.0"
   }
 }
