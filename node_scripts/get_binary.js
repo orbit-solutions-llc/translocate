@@ -1,6 +1,6 @@
 import { Binary } from 'simple-binary-install'
 import pkg_info from '../package.json' assert { type: 'json' }
-import os from 'os'
+import os from 'node:os'
 
 function getBinary() {
   const platform = getPlatform()

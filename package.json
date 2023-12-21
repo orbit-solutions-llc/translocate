@@ -3,7 +3,9 @@
   "version": "0.4.0",
   "type": "module",
   "description": "translocate is a high performance converter that takes CSV translation files and outputs corresponding JSON translation files.",
-  "files": ["node_scripts/**/*"],
+  "files": [
+    "node_scripts/**/*"
+  ],
   "bin": {
     "translocate": "./node_scripts/run.js"
   },
@@ -28,6 +30,6 @@
   "author": "Orville Bennett",
   "license": "MIT",
   "dependencies": {
-    "simple-binary-install": "0.1.0"
+    "simple-binary-install": "0.2.1"
   }
 }
