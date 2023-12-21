@@ -1,5 +1,5 @@
-# Release v0.4.0
+# Release v0.5.0
 
-## *2023-12-12*
-- Made output directory configurable
-- Modularized app logic to make it more testable.
+## *2023-12-21*
+- Don't overwrite translation key if replacing translation is an empty string.
+- Add more tests testable.
