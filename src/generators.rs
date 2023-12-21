@@ -227,7 +227,7 @@ new.translation\tny oversættelse\t
     fn generate_csv_reader(
         input_filename: &str,
         input_data: &str,
-        config: &Config
+        config: &Config,
     ) -> (Reader<File>, StringRecord, usize) {
         File::options()
             .write(true)
@@ -299,7 +299,10 @@ new.translation\tny oversættelse\t
     fn it_creates_a_new_json_file_for_the_given_language_from_tsv() {
         let test_file_path = "test_file_1.tsv";
         let lang_file_path = "da_DK_t.json";
-        let config = &Config { delimiter: b'\t', ..CONFIG };
+        let config = &Config {
+            delimiter: b'\t',
+            ..CONFIG
+        };
         let mut test_conf = generate_csv_reader(test_file_path, TSV_ROW_1, config);
 
         generate_json_fast(&mut test_conf.0, &test_conf.1, test_conf.2, "").unwrap();
@@ -319,7 +322,10 @@ new.translation\tny oversættelse\t
     fn it_creates_a_new_json_file_for_the_given_language_from_ssv() {
         let test_file_path = "test_file_1.ssv";
         let lang_file_path = "da_DK_s.json";
-        let config = &Config { delimiter: b';', ..CONFIG };
+        let config = &Config {
+            delimiter: b';',
+            ..CONFIG
+        };
         let mut test_conf = generate_csv_reader(test_file_path, SSV_ROW_1, config);
 
         generate_json_fast(&mut test_conf.0, &test_conf.1, test_conf.2, "").unwrap();

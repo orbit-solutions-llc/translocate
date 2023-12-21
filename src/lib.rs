@@ -123,11 +123,10 @@ impl<'a> Config<'a> {
 fn special_character_check(char: &str, text: &str) {
     if text.contains(char) {
         println!(
-            "{} Path {} contained the literal '{}' character {}\n{}\n",
+            "{} Path {} contained the literal '{}' character and will be treated as a filename.\n{}\n",
             "Warning:".on_yellow().blink(),
             text.underline(),
             char.bold(),
-            "and will be treated as a filename.",
             "If this was not intended, try again without wrapping the path inside of quotes to allow expansion by your shell.".bold(),
         );
     }
@@ -152,7 +151,7 @@ pub fn get_file_location(file: &str) -> Result<PathBuf, io::Error> {
 }
 
 /// Returns a configured CSV reader for the specified file, or an error.
-/// 
+///
 /// * `file_path` - relative or absolute path to file
 /// * `config` - parsed command line configuration
 pub fn get_file_reader(file_path: &str, config: &Config) -> Result<Reader<fs::File>, csv::Error> {
