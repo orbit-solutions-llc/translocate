@@ -8,6 +8,7 @@ use yansi::Paint;
 
 const DUPE_KEY_NOTICE: &str = "translation keys overwritten during conversion.\n";
 
+/// Generate JSON files from CSV using structured deserialization
 pub fn generate_json(
     reader: &mut Reader<File>,
     headings: &StringRecord,
@@ -90,6 +91,7 @@ pub fn generate_json(
     Ok(())
 }
 
+/// Generate JSON files from CSV using StringRecord
 pub fn generate_json_fast(
     reader: &mut Reader<File>,
     headings: &StringRecord,
@@ -196,6 +198,11 @@ id,da_DK,de_DE,en_US,es_ES,fr_FR,it_IT,TextDomain,nl_NL,pt_BR,pt_PT,sv_SE,
 new.translation,ny oversættelse,neue Übersetzung,new translation,nueva traducción,nouvelle traduction,nuova traduzione,,nieuwe vertaling,nova tradução,nova tradução,ny översättning,
 ";
 
+    const CSV_ROW_0: &'static str = "\
+id,da_DK_0,
+new.translation,,
+";
+
     const CSV_ROW_1: &'static str = "\
 id,da_DK_1,
 new.translation,ny oversættelse,
@@ -214,6 +221,12 @@ new.translation,,
 new.translation,nyoversættelse,
 ";
 
+    const CSV_ROW_4: &'static str = "\
+id,da_DK_4,
+new.translation,,
+new.translation,ny oversættelse,
+";
+
     const SSV_ROW_1: &'static str = "\
 id;da_DK_s;
 new.translation;ny oversættelse;
@@ -223,6 +236,10 @@ new.translation;ny oversættelse;
 id\tda_DK_t\t
 new.translation\tny oversættelse\t
 ";
+
+    const DA_JSON_0: &'static str = "{\n  \"new.translation\": \"\"\n}";
+    const DA_JSON_1: &'static str = "{\n  \"new.translation\": \"ny oversættelse\"\n}";
+    const DA_JSON_2: &'static str = "{\n  \"new.translation\": \"nyoversættelse\"\n}";
 
     fn generate_csv_reader(
         input_filename: &str,
@@ -279,17 +296,14 @@ new.translation\tny oversættelse\t
         generate_json_fast(&mut test_conf.0, &test_conf.1, test_conf.2, "").unwrap();
 
         for (idx, file) in lang_file_list.iter().enumerate() {
-            let trans = fs::read_to_string(file)
-                .unwrap()
-                .replace('\n', "")
-                .replace("  ", "");
+            let trans = fs::read_to_string(file).unwrap();
             let trans = trans.trim();
             fs::remove_file(file).unwrap();
 
             assert!(File::open(illegal_file).is_err());
             assert_eq!(
                 trans,
-                format!("{{\"new.translation\": \"{}\"}}", translations[idx])
+                format!("{{\n  \"new.translation\": \"{}\"\n}}", translations[idx])
             );
         }
         fs::remove_file(test_file_path).unwrap();
@@ -307,15 +321,12 @@ new.translation\tny oversættelse\t
 
         generate_json_fast(&mut test_conf.0, &test_conf.1, test_conf.2, "").unwrap();
 
-        let trans = fs::read_to_string(lang_file_path)
-            .unwrap()
-            .replace('\n', "")
-            .replace("  ", "");
+        let trans = fs::read_to_string(lang_file_path).unwrap();
         let trans = trans.trim();
         fs::remove_file(test_file_path).unwrap();
         fs::remove_file(lang_file_path).unwrap();
 
-        assert_eq!(trans, "{\"new.translation\": \"ny oversættelse\"}");
+        assert_eq!(trans, DA_JSON_1);
     }
 
     #[test]
@@ -330,34 +341,40 @@ new.translation\tny oversættelse\t
 
         generate_json_fast(&mut test_conf.0, &test_conf.1, test_conf.2, "").unwrap();
 
-        let trans = fs::read_to_string(lang_file_path)
-            .unwrap()
-            .replace('\n', "")
-            .replace("  ", "");
+        let trans = fs::read_to_string(lang_file_path).unwrap();
         let trans = trans.trim();
         fs::remove_file(test_file_path).unwrap();
         fs::remove_file(lang_file_path).unwrap();
 
-        assert_eq!(trans, "{\"new.translation\": \"ny oversættelse\"}");
+        assert_eq!(trans, DA_JSON_1);
     }
 
     #[test]
     fn it_creates_a_new_json_file_for_the_given_language_from_csv() {
-        let test_file_path = "test_file1.csv";
-        let lang_file_path = "da_DK_1.json";
-        let mut test_conf = generate_csv_reader(test_file_path, CSV_ROW_1, &CONFIG);
+        // Empty translation
+        let test_file_0 = "test_file0.csv";
+        let lang_file_0 = "da_DK_0.json";
+        let mut test_conf_0 = generate_csv_reader(test_file_0, CSV_ROW_0, &CONFIG);
+        generate_json_fast(&mut test_conf_0.0, &test_conf_0.1, test_conf_0.2, "").unwrap();
 
-        generate_json_fast(&mut test_conf.0, &test_conf.1, test_conf.2, "").unwrap();
+        // Actual translation
+        let test_file_1 = "test_file1.csv";
+        let lang_file_1 = "da_DK_1.json";
+        let mut test_conf_1 = generate_csv_reader(test_file_1, CSV_ROW_1, &CONFIG);
+        generate_json_fast(&mut test_conf_1.0, &test_conf_1.1, test_conf_1.2, "").unwrap();
 
-        let trans = fs::read_to_string(lang_file_path)
-            .unwrap()
-            .replace('\n', "")
-            .replace("  ", "");
-        let trans = trans.trim();
-        fs::remove_file(test_file_path).unwrap();
-        fs::remove_file(lang_file_path).unwrap();
+        let trans_0 = fs::read_to_string(lang_file_0).unwrap();
+        let trans_0 = trans_0.trim();
+        fs::remove_file(test_file_0).unwrap();
+        fs::remove_file(lang_file_0).unwrap();
 
-        assert_eq!(trans, "{\"new.translation\": \"ny oversættelse\"}");
+        let trans_1 = fs::read_to_string(lang_file_1).unwrap();
+        let trans_1 = trans_1.trim();
+        fs::remove_file(test_file_1).unwrap();
+        fs::remove_file(lang_file_1).unwrap();
+
+        assert_eq!(trans_0, DA_JSON_0);
+        assert_eq!(trans_1, DA_JSON_1);
     }
 
     #[test]
@@ -368,15 +385,12 @@ new.translation\tny oversættelse\t
 
         generate_json_fast(&mut test_conf.0, &test_conf.1, test_conf.2, "").unwrap();
 
-        let trans = fs::read_to_string(lang_file_path)
-            .unwrap()
-            .replace('\n', "")
-            .replace("  ", "");
+        let trans = fs::read_to_string(lang_file_path).unwrap();
         let trans = trans.trim();
         fs::remove_file(test_file_path).unwrap();
         fs::remove_file(lang_file_path).unwrap();
 
-        assert_eq!(trans, "{\"new.translation\": \"ny oversættelse\"}");
+        assert_eq!(trans, DA_JSON_1);
     }
 
     #[test]
@@ -387,14 +401,27 @@ new.translation\tny oversættelse\t
 
         generate_json_fast(&mut test_conf.0, &test_conf.1, test_conf.2, "").unwrap();
 
-        let trans = fs::read_to_string(lang_file_path)
-            .unwrap()
-            .replace('\n', "")
-            .replace("  ", "");
+        let trans = fs::read_to_string(lang_file_path).unwrap();
         let trans = trans.trim();
         fs::remove_file(test_file_path).unwrap();
         fs::remove_file(lang_file_path).unwrap();
 
-        assert_eq!(trans, "{\"new.translation\": \"nyoversættelse\"}");
+        assert_eq!(trans, DA_JSON_2);
+    }
+
+    #[test]
+    fn it_overwrites_empty_value_with_new_value() {
+        let test_file_path = "test_file4.csv";
+        let lang_file_path = "da_DK_4.json";
+        let mut test_conf = generate_csv_reader(test_file_path, CSV_ROW_4, &CONFIG);
+
+        generate_json_fast(&mut test_conf.0, &test_conf.1, test_conf.2, "").unwrap();
+
+        let trans = fs::read_to_string(lang_file_path).unwrap();
+        let trans = trans.trim();
+        fs::remove_file(test_file_path).unwrap();
+        fs::remove_file(lang_file_path).unwrap();
+
+        assert_eq!(trans, DA_JSON_1);
     }
 }
