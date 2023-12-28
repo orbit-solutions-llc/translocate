@@ -109,7 +109,7 @@ jobs:
         NPM_ACCESS_TOKEN: ${{ secrets.NPM_ACCESS_TOKEN_GITEA }}
       run: |
         echo "//code.orbitsolutions.dev/api/packages/orb-it-solutions/npm/:_authToken=$NPM_ACCESS_TOKEN" > ".npmrc"
-        npm publish
+        npm publish --registry=https://code.orbitsolutions.dev/api/packages/orb-it-solutions/npm/
 
     - name: Publish cargo package
       env:
