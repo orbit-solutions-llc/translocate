@@ -1,5 +1,4 @@
-# Release v0.5.0
+# Release v0.5.1
 
-## *2023-12-21*
-- Don't overwrite translation key if replacing translation is an empty string.
-- Add more tests testable.
+## *2023-12-27*
+- Republish 0.5.0 without useless csv/tsv files included.
