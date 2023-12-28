@@ -1,6 +1,6 @@
 {
   "name": "translocate",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "type": "module",
   "description": "translocate is a high performance converter that takes CSV translation files and outputs corresponding JSON translation files.",
   "files": [
