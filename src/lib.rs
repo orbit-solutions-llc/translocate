@@ -11,22 +11,24 @@ use yansi::Paint;
 /// High performance CSV translation to JSON translation file transformer.
 pub struct CliArgs {
     #[argh(option, short = 'd')]
-    /// field delimiter to use when parsing. Uses `\t` for TSV and `,` for CSV by default.
+    /// column delimiter to use when parsing. Uses `\t` for TSV and `,` for CSV by default.
     pub delimiter: Option<String>,
     #[argh(option, short = 'e')]
     /// escape character to use for quotes when parsing. Uses `\` for TSV and `"` for CSV by default.
     pub escape_char: Option<String>,
     #[argh(switch, short = 'i')]
-    /// flag which determines if the number of fields in records is allowed to change. Parsing is stricter if enabled.
+    /// determines if input file parsing continues should the number of columns in each record differ.
+    /// Passing this flag enables option, making parsing is stricter (less flexible).
     pub inflexible: bool,
     #[argh(option, short = 'o')]
     /// desired output directory, if different from the current directory. Can be either a relative or absolute file path.
     pub output_dir: Option<String>,
     #[argh(option, short = 't')]
-    /// record terminator to use. CSV default is `\r`, `\n` or `\r\n`. TSV default is `\n`.
+    /// character which indicates the end of each record. CSV default is `\r`, `\n` or `\r\n`. TSV default is `\n`.
     pub terminator: Option<String>,
     #[argh(switch, short = 'T')]
-    /// flag to determine if non-header fields should be trimmed. Trims leading and trailing whitespace if enabled.
+    /// determines if non-header columns should be trimmed. Passing this flag enables option,
+    /// which trims leading and trailing whitespace.
     pub trim: Option<bool>,
     #[argh(switch, short = 'v')]
     /// version information
@@ -38,20 +40,20 @@ pub struct CliArgs {
     pub file: String,
 }
 
-/// Configuration struct that stores parsed command line options
-#[doc(hidden)]
+/// Configures how the CSV file will be read. Defaults are modified after parsing any provided command line options
 pub struct Config<'a> {
-    /// field delimiter to use when parsing. Uses `\t` for TSV and `,` for CSV by default.
+    /// Delimiter character to use when separating. Uses `\t` for TSV and `,` for CSV by default.
     delimiter: u8,
-    /// escape character to use for quotes when parsing. Uses `\` for TSV and `"` for CSV by default.
+    /// Escape character to use for quotes when parsing columns. Uses `\` for TSV and `"` for CSV by default.
     escape_char: u8,
-    /// flag which determines if the number of fields in records is allowed to change. Parsing is looser if enabled.
+    /// Flag to determine whether processing the input file should continue if the number of columns in records is not always the same.
+    /// If true, parsing is less strict. Default is true.
     flexible: bool,
     /// desired output directory, if different from the current directory. Can be either a relative or absolute file path.
     output_dir: &'a str,
     /// record terminator to use. CSV default is `\r`, `\n` or `\r\n`. TSV default is `\n`.
     terminator_char: Terminator,
-    /// flag to determine if non-header fields should be trimmed. Trims leading and trailing whitespace if enabled.
+    /// flag to determine if non-header columns should be trimmed. Trims leading and trailing whitespace if enabled.
     trim_whitespace: Trim,
 }
 
