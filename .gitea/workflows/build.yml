@@ -8,10 +8,6 @@ jobs:
   build-translocate:
     # custom runner preinstalled with rust stable
     runs-on: ubuntu-rust-22.04
-    strategy:
-      matrix:
-        rust:
-          - 1.72.0
 
     steps:
       - uses: actions/checkout@v3
