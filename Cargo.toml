@@ -15,7 +15,7 @@ keywords = [
   "localization",
 ]
 categories = ["command-line-utilities", "encoding", "internationalization", "localization"]
-exclude = [".gitea/*", ".github/*", ".vscode/*"]
+exclude = [".gitea/*", ".github/*", ".vscode/*", "node_scripts/*"]
 
 [dependencies]
 argh = "0.1.12"
