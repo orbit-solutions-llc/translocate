@@ -1,3 +1,29 @@
+//! # libtranslocate converts a CSV translation file into multiple JSON translation files.
+//!
+//! ## Overview
+//! CSV files are a convenient, and somewhat common format for housing translations. They are
+//! plain text files in the [CSV format](https://en.wikipedia.org/wiki/Comma-separated_values).
+//! The ease of exporting from an spreadsheet to CSV format makes it an ideal candidate for
+//! non-technical users to use for output in localization tasks. CSV files are also
+//! a supported import and export format for many localization services.
+//!
+//! Unfortunately, though the format [has been standardized](https://www.rfc-editor.org/rfc/rfc4180) there are
+//! many non well-formed CSV files in existence, making their direct use for web localization projects somewhat
+//! challenging. JSON meanwhile has a very strict format. It is also very popular&mdash;especially in web
+//! development&mdash;as a localization format.
+//!
+//! This crate provides a binary, `translocate` which uses functions provided by `libtranslocate` to
+//! to read an input CSV localization file, and output JSON localization files, with one JSON file
+//! being generated for every localization that exists as a column in the input CSV file.
+//!
+//! The format of the JSON files output are in the form `{ "localization-key": "localized text" }` e.g.
+//!
+//! ```json
+//! {
+//!   "app.title": "Translocate means to move from one place to another."
+//! }
+//! ```
+
 mod generators;
 mod translations;
 
@@ -43,18 +69,18 @@ pub struct CliArgs {
 /// Configures how the CSV file will be read. Defaults are modified after parsing any provided command line options
 pub struct Config<'a> {
     /// Delimiter character to use when separating. Uses `\t` for TSV and `,` for CSV by default.
-    delimiter: u8,
+    pub delimiter: u8,
     /// Escape character to use for quotes when parsing columns. Uses `\` for TSV and `"` for CSV by default.
-    escape_char: u8,
+    pub escape_char: u8,
     /// Flag to determine whether processing the input file should continue if the number of columns in records is not always the same.
     /// If true, parsing is less strict. Default is true.
-    flexible: bool,
+    pub flexible: bool,
     /// desired output directory, if different from the current directory. Can be either a relative or absolute file path.
-    output_dir: &'a str,
+    pub output_dir: &'a str,
     /// record terminator to use. CSV default is `\r`, `\n` or `\r\n`. TSV default is `\n`.
-    terminator_char: Terminator,
+    pub terminator_char: Terminator,
     /// flag to determine if non-header columns should be trimmed. Trims leading and trailing whitespace if enabled.
-    trim_whitespace: Trim,
+    pub trim_whitespace: Trim,
 }
 
 #[doc(hidden)]
@@ -122,6 +148,9 @@ impl<'a> Config<'a> {
 
 /// Checks if special command line shell characters like "~" or "$", which
 /// are used for expansions are present anywhere in a text string.
+///
+/// * `char` - the special character to check for
+/// * `text` - the text to search for the special character
 fn special_character_check(char: &str, text: &str) {
     if text.contains(char) {
         println!(
@@ -168,7 +197,12 @@ pub fn get_file_reader(file_path: &str, config: &Config) -> Result<Reader<fs::Fi
         .from_path(csv_path)
 }
 
-/// Runs function to generate JSON translation files.
+/// Entry point for library to generate JSON translation files.
+///
+/// * `reader` - a configured CSV reader
+/// * `headings` - heading row for the CSV file
+/// * `rows` - number of rows that are in the CSV file
+/// * `config` - parsed command line configuration
 pub fn run(
     reader: &mut Reader<fs::File>,
     headings: &StringRecord,

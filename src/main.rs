@@ -1,3 +1,4 @@
+//! # translocate converts a CSV translation file into JSON translation files, one for each language available.
 use csv::Reader;
 use std::{io, process};
 use translocate::{get_file_location, get_file_reader, run, CliArgs, Config};
@@ -6,6 +7,7 @@ use yansi::Paint;
 const APP_DESC: &str = "trans·lo·cate, verb, to move from one place to another.";
 const MISSING_FILE_ERR: &str = "Try again with the absolute (full) path to the file.";
 
+/// Main entry point for translocate binary
 fn main() -> Result<(), std::io::Error> {
     let cli: CliArgs = argh::from_env();
 

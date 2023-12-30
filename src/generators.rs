@@ -9,6 +9,11 @@ use yansi::Paint;
 const DUPE_KEY_NOTICE: &str = "translation keys overwritten during conversion.\n";
 
 /// Generate JSON files from CSV using structured deserialization
+///
+/// * `reader` - a configured CSV reader
+/// * `headings` - heading row for the CSV file
+/// * `rows` - number of rows that are in the CSV file
+/// * `output_dir` - location JSON files should be output to
 pub fn generate_json(
     reader: &mut Reader<File>,
     headings: &StringRecord,
@@ -92,6 +97,11 @@ pub fn generate_json(
 }
 
 /// Generate JSON files from CSV using StringRecord
+///
+/// * `reader` - a configured CSV reader
+/// * `headings` - heading row for the CSV file
+/// * `rows` - number of rows that are in the CSV file
+/// * `output_dir` - location JSON files should be output to
 pub fn generate_json_fast(
     reader: &mut Reader<File>,
     headings: &StringRecord,
@@ -193,53 +203,53 @@ mod generator_tests {
         trim_whitespace: Trim::Fields,
     };
 
-    const CSV_ALL_LANG: &'static str = "\
+    const CSV_ALL_LANG: &str = "\
 id,da_DK,de_DE,en_US,es_ES,fr_FR,it_IT,TextDomain,nl_NL,pt_BR,pt_PT,sv_SE,
 new.translation,ny oversættelse,neue Übersetzung,new translation,nueva traducción,nouvelle traduction,nuova traduzione,,nieuwe vertaling,nova tradução,nova tradução,ny översättning,
 ";
 
-    const CSV_ROW_0: &'static str = "\
+    const CSV_ROW_0: &str = "\
 id,da_DK_0,
 new.translation,,
 ";
 
-    const CSV_ROW_1: &'static str = "\
+    const CSV_ROW_1: &str = "\
 id,da_DK_1,
 new.translation,ny oversættelse,
 ";
 
-    const CSV_ROW_2: &'static str = "\
+    const CSV_ROW_2: &str = "\
 id,da_DK_2,
 new.translation,ny oversættelse,
 new.translation,,
 ";
 
-    const CSV_ROW_3: &'static str = "\
+    const CSV_ROW_3: &str = "\
 id,da_DK_3,
 new.translation,ny oversættelse,
 new.translation,,
 new.translation,nyoversættelse,
 ";
 
-    const CSV_ROW_4: &'static str = "\
+    const CSV_ROW_4: &str = "\
 id,da_DK_4,
 new.translation,,
 new.translation,ny oversættelse,
 ";
 
-    const SSV_ROW_1: &'static str = "\
+    const SSV_ROW_1: &str = "\
 id;da_DK_s;
 new.translation;ny oversættelse;
 ";
 
-    const TSV_ROW_1: &'static str = "\
+    const TSV_ROW_1: &str = "\
 id\tda_DK_t\t
 new.translation\tny oversættelse\t
 ";
 
-    const DA_JSON_0: &'static str = "{\n  \"new.translation\": \"\"\n}";
-    const DA_JSON_1: &'static str = "{\n  \"new.translation\": \"ny oversættelse\"\n}";
-    const DA_JSON_2: &'static str = "{\n  \"new.translation\": \"nyoversættelse\"\n}";
+    const DA_JSON_0: &str = "{\n  \"new.translation\": \"\"\n}";
+    const DA_JSON_1: &str = "{\n  \"new.translation\": \"ny oversættelse\"\n}";
+    const DA_JSON_2: &str = "{\n  \"new.translation\": \"nyoversættelse\"\n}";
 
     fn generate_csv_reader(
         input_filename: &str,
