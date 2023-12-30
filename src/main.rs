@@ -1,4 +1,15 @@
 //! # translocate converts a CSV translation file into JSON translation files, one for each language available.
+//!
+//! This `translocate` binary reads an input CSV localization file, and outputs JSON localization files, with one JSON file
+//! being generated for every localization that exists as a column in the input CSV file.
+//!
+//! The format of the JSON files output are in the form `{ "localization-key": "localized text" }` e.g.
+//!
+//! ```json
+//! {
+//!   "app.title": "Translocate means to move from one place to another."
+//! }
+//! ```
 use csv::Reader;
 use std::{io, process};
 use translocate::{get_file_location, get_file_reader, run, CliArgs, Config};

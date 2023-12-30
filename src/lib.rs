@@ -29,12 +29,13 @@ mod translations;
 
 use argh::FromArgs;
 use csv::{Reader, ReaderBuilder, StringRecord, Terminator, Trim};
-use generators::{generate_json, generate_json_fast};
+pub use generators::{generate_json, generate_json_fast};
 use std::{ffi::OsStr, fs, io, path::PathBuf};
 use yansi::Paint;
 
 #[derive(FromArgs)]
-/// High performance CSV translation to JSON translation file transformer.
+#[argh(description = "High performance CSV translation to JSON translation file transformer.")]
+/// Defines the command line arguments that the translocate binary will accepts.
 pub struct CliArgs {
     #[argh(option, short = 'd')]
     /// column delimiter to use when parsing. Uses `\t` for TSV and `,` for CSV by default.
