@@ -22,4 +22,4 @@ jobs:
         run: |
           cargo clippy
           cargo fmt --all --check
-          cargo test generators -- --test-threads 1
+          cargo test -- --test-threads 1
