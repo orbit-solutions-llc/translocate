@@ -97,6 +97,20 @@ jobs:
           path: osxcross
           key: ${{ runner.os }}-osxcross
 
+      - name: Set up cargo cache
+        uses: https://github.com/actions/cache@v3
+        id: cache-osxcross
+        continue-on-error: true
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            osxcross/
+          key: osxcross-${{ steps.cache-macos.outputs.hash }}
+          restore-keys: osxcross-${{ steps.cache-macos.outputs.hash }}
+
       - name: Publish package to gitea
         env:
           NPM_ACCESS_TOKEN: ${{ secrets.NPM_ACCESS_TOKEN_GITEA }}
