@@ -2,118 +2,126 @@ name: Build translocate
 
 on:
   push:
-    tags: ['v*.*.*']
+    tags: ["v*.*.*"]
 
 jobs:
   build-translocate:
-    runs-on: ubuntu-22.04
-    strategy:
-      matrix:
-        rust:
-          - 1.72.0
+    # custom runner preinstalled with rust stable
+    runs-on: ubuntu-rust-22.04
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@v3
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
+        with:
+          go-version: ">=1.20.1"
 
-    - name: Install Rust
-      uses: https://github.com/dtolnay/rust-toolchain@stable
-      with:
-        toolchain: ${{ matrix.rust }}
-        components: rustfmt, clippy
+      - name: Run tests
+        run: cargo test -- --test-threads 1
 
-    - name: Run tests
-      run: cargo test generators -- --test-threads 1
+      - name: Install dependencies
+        run: |
+          apt-get update
+          apt-get -y install gcc-mingw-w64-x86-64 gcc-mingw-w64-i686 cmake
+          rustup target add i686-pc-windows-gnu
+          rustup target add x86_64-pc-windows-gnu
+          rustup target add x86_64-unknown-linux-gnu
+          rustup target add x86_64-apple-darwin
+          rustup target add aarch64-apple-darwin
+          mkdir dist
+          mkdir builds
 
-    - name: Install dependencies
-      run: |
-        apt-get update
-        apt-get -y install gcc-mingw-w64-x86-64 gcc-mingw-w64-i686 cmake
-        rustup target add i686-pc-windows-gnu
-        rustup target add x86_64-pc-windows-gnu
-        rustup target add x86_64-unknown-linux-gnu
-        rustup target add x86_64-apple-darwin
-        rustup target add aarch64-apple-darwin
+      - name: Build Win64
+        run: |
+          cargo rustc --bin translocate --release --target=x86_64-pc-windows-gnu -- -C linker=x86_64-w64-mingw32-gcc -C strip=symbols -C lto=true -C opt-level=z -C codegen-units=1
+          mkdir builds/translocate-win64
+          cp target/x86_64-pc-windows-gnu/release/translocate.exe builds/translocate-win64
+          tar -C builds -czvf dist/translocate-win64.tar.gz translocate-win64
 
-        mkdir dist
-        mkdir builds
+      - name: Build Win32
+        run: |
+          cargo rustc --bin translocate --release --target=i686-pc-windows-gnu -- -C linker=i686-w64-mingw32-gcc -C link-args=-mwindows -C panic=abort -C strip=symbols -C lto=true -C opt-level=z -C codegen-units=1
+          mkdir builds/translocate-win32
+          cp target/i686-pc-windows-gnu/release/translocate.exe builds/translocate-win32
+          tar -C builds -czvf dist/translocate-win32.tar.gz translocate-win32
 
-    - name: Build Win64
-      run: |
-        cargo rustc --bin translocate --release --target=x86_64-pc-windows-gnu -- -C linker=x86_64-w64-mingw32-gcc -C strip=symbols -C lto=true -C opt-level=z -C codegen-units=1
-        mkdir builds/translocate-win64
-        cp target/x86_64-pc-windows-gnu/release/translocate.exe builds/translocate-win64
-        tar -C builds -czvf dist/translocate-win64.tar.gz translocate-win64
+      - name: Build Linux
+        run: |
+          cargo rustc --bin translocate --release --target=x86_64-unknown-linux-gnu -- -C strip=symbols -C lto=true -C opt-level=z -C codegen-units=1
+          mkdir builds/translocate-linux
+          cp target/x86_64-unknown-linux-gnu/release/translocate builds/translocate-linux
+          tar -C builds -czvf dist/translocate-linux.tar.gz translocate-linux
 
-    - name: Build Win32
-      run: |
-        cargo rustc --bin translocate --release --target=i686-pc-windows-gnu -- -C linker=i686-w64-mingw32-gcc -C link-args=-mwindows -C panic=abort -C strip=symbols -C lto=true -C opt-level=z -C codegen-units=1
-        mkdir builds/translocate-win32
-        cp target/i686-pc-windows-gnu/release/translocate.exe builds/translocate-win32
-        tar -C builds -czvf dist/translocate-win32.tar.gz translocate-win32
+      - name: Install Mac OS dependencies
+        if: steps.cache-macos.outputs.cache-hit != 'true'
+        run: |
+          git clone https://github.com/tpoechtrager/osxcross
+          cd osxcross
+          tools/get_dependencies.sh
+          wget -nc https://github.com/phracker/MacOSX-SDKs/releases/download/11.3/MacOSX11.3.sdk.tar.xz
+          mv MacOSX11.3.sdk.tar.xz tarballs/
+          UNATTENDED=yes OSX_VERSION_MIN=11.0 MACOSX_DEPLOYMENT_TARGET=11 ./build.sh
 
-    - name: Build Linux
-      run: |
-        cargo rustc --bin translocate --release --target=x86_64-unknown-linux-gnu -- -C strip=symbols -C lto=true -C opt-level=z -C codegen-units=1
-        mkdir builds/translocate-linux
-        cp target/x86_64-unknown-linux-gnu/release/translocate builds/translocate-linux
-        tar -C builds -czvf dist/translocate-linux.tar.gz translocate-linux
+      - name: Build Mac OS
+        run: |
+          cp .cargo/config.toml.ci .cargo/config.toml
+          export PATH="$(pwd)/osxcross/target/bin:$PATH" LIBZ_SYS_STATIC=1
+          export CC=o64-clang CXX=o64-clang++
+          cargo build --release --target=x86_64-apple-darwin
+          mkdir builds/translocate-macos-x86_64
+          cp target/x86_64-apple-darwin/release/translocate builds/translocate-macos-x86_64
+          tar -C builds -czvf dist/translocate-macos-x86_64.tar.gz translocate-macos-x86_64
+          export CC=oa64-clang CXX=oa64-clang++
+          cargo build --release --target=aarch64-apple-darwin
+          mkdir builds/translocate-macos-aarch64
+          cp target/aarch64-apple-darwin/release/translocate builds/translocate-macos-aarch64
+          tar -C builds -czvf dist/translocate-macos-aarch64.tar.gz translocate-macos-aarch64
+          rm .cargo/config.toml
 
-    - name: Install Mac OS dependencies
-      if: steps.cache-macos.outputs.cache-hit != 'true'
-      run: |
-        git clone https://github.com/tpoechtrager/osxcross
-        cd osxcross
-        tools/get_dependencies.sh
-        wget -nc https://github.com/phracker/MacOSX-SDKs/releases/download/11.3/MacOSX11.3.sdk.tar.xz
-        mv MacOSX11.3.sdk.tar.xz tarballs/
-        UNATTENDED=yes OSX_VERSION_MIN=11.0 MACOSX_DEPLOYMENT_TARGET=11 ./build.sh
+      - name: Upload release
+        uses: https://gitea.com/actions/gitea-release-action@v1
+        with:
+          body_path: RELEASE_NOTES.md
+          files: |
+            dist/translocate-win64.tar.gz
+            dist/translocate-win32.tar.gz
+            dist/translocate-linux.tar.gz
+            dist/translocate-macos-aarch64.tar.gz
+            dist/translocate-macos-x86_64.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Build Mac OS
-      run: |
-        cp .cargo/config.toml.ci .cargo/config.toml
-        export PATH="$(pwd)/osxcross/target/bin:$PATH" LIBZ_SYS_STATIC=1
-        export CC=o64-clang CXX=o64-clang++
-        cargo build --release --target=x86_64-apple-darwin
-        mkdir builds/translocate-macos-x86_64
-        cp target/x86_64-apple-darwin/release/translocate builds/translocate-macos-x86_64
-        tar -C builds -czvf dist/translocate-macos-x86_64.tar.gz translocate-macos-x86_64
-        export CC=oa64-clang CXX=oa64-clang++
-        cargo build --release --target=aarch64-apple-darwin
-        mkdir builds/translocate-macos-aarch64
-        cp target/aarch64-apple-darwin/release/translocate builds/translocate-macos-aarch64
-        tar -C builds -czvf dist/translocate-macos-aarch64.tar.gz translocate-macos-aarch64
+      - name: Cache Mac OS dependencies
+        uses: https://gitea.com/actions/go-hashfiles@v0.0.1
+        id: cache-macos
+        with:
+          path: osxcross
+          key: ${{ runner.os }}-osxcross
 
-    - name: Upload release
-      uses: actions/gitea-release-action@v1
-      with:
-        body_path: RELEASE_NOTES.md
-        files: |
-          dist/translocate-win64.tar.gz
-          dist/translocate-win32.tar.gz
-          dist/translocate-linux.tar.gz
-          dist/translocate-macos-aarch64.tar.gz
-          dist/translocate-macos-x86_64.tar.gz
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set up cargo cache
+        uses: https://github.com/actions/cache@v3
+        id: cache-osxcross
+        continue-on-error: true
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            osxcross/
+          key: osxcross-${{ steps.cache-macos.outputs.hash }}
+          restore-keys: osxcross-${{ steps.cache-macos.outputs.hash }}
 
-    - name: Cache Mac OS dependencies
-      id: cache-macos
-      uses: https://github.com/actions/cache@v3
-      with:
-        path: osxcross
-        key: ${{ runner.os }}-osxcross
+      - name: Publish package to gitea
+        env:
+          NPM_ACCESS_TOKEN: ${{ secrets.NPM_ACCESS_TOKEN_GITEA }}
+        run: |
+          echo "//code.orbitsolutions.dev/api/packages/orb-it-solutions/npm/:_authToken=$NPM_ACCESS_TOKEN" > ".npmrc"
+          npm publish --registry=https://code.orbitsolutions.dev/api/packages/orb-it-solutions/npm/
+          rm -rf builds dist osxcross .npmrc
 
-    - name: Publish package to gitea
-      env:
-        NPM_ACCESS_TOKEN: ${{ secrets.NPM_ACCESS_TOKEN_GITEA }}
-      run: |
-        echo "//code.orbitsolutions.dev/api/packages/orb-it-solutions/npm/:_authToken=$NPM_ACCESS_TOKEN" > ".npmrc"
-        npm publish --registry=https://code.orbitsolutions.dev/api/packages/orb-it-solutions/npm/
-
-    - name: Publish cargo package
-      env:
-        CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
-      run: |
-        cargo login "$CARGO_REGISTRY_TOKEN"
-        cargo publish
+      - name: Publish cargo package
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: |
+          cargo login "$CARGO_REGISTRY_TOKEN"
+          cargo publish
