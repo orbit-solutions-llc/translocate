@@ -1,4 +1,4 @@
-# Release v0.5.1
+# Release v0.5.2
 
-## *2023-12-27*
-- Republish 0.5.0 without useless csv/tsv files included.
+## *2023-12-30*
+- Improve crate documentation.
