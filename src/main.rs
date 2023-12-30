@@ -32,9 +32,7 @@ fn main() -> Result<(), std::io::Error> {
     }
 
     let file_path = &cli.file;
-
     let csv_path = get_file_location(file_path)?;
-
     let config = Config::new(&cli, csv_path.extension());
 
     let mut reader = match get_file_reader(file_path, &config) {
@@ -61,10 +59,8 @@ fn main() -> Result<(), std::io::Error> {
         },
     };
 
-    let mut reader_count = Reader::from_path(&csv_path)?;
-
     let headings = reader.headers()?.clone();
-    let rows = reader_count.byte_records().count();
+    let rows = Reader::from_path(&csv_path)?.byte_records().count();
 
     if let Err(error) = run(&mut reader, &headings, rows, &config) {
         eprintln!("{}", error);
