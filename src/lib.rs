@@ -50,6 +50,9 @@ pub struct CliArgs {
     #[argh(option, short = 'o')]
     /// desired output directory, if different from the current directory. Can be either a relative or absolute file path.
     pub output_dir: Option<String>,
+    #[argh(option, short = 'O')]
+    /// if set, saves each file with the name provided inside a directory named by the locale.
+    pub output_filename: Option<String>,
     #[argh(option, short = 't')]
     /// character which indicates the end of each record. CSV default is `\r`, `\n` or `\r\n`. TSV default is `\n`.
     pub terminator: Option<String>,
@@ -69,18 +72,20 @@ pub struct CliArgs {
 
 /// Configures how the CSV file will be read. Defaults are modified after parsing any provided command line options
 pub struct Config<'a> {
-    /// Delimiter character to use when separating. Uses `\t` for TSV and `,` for CSV by default.
+    /// Delimiter character to use when separating columns. Uses `\t` for TSV and `,` for CSV by default.
     pub delimiter: u8,
     /// Escape character to use for quotes when parsing columns. Uses `\` for TSV and `"` for CSV by default.
     pub escape_char: u8,
     /// Flag to determine whether processing the input file should continue if the number of columns in records is not always the same.
     /// If true, parsing is less strict. Default is true.
     pub flexible: bool,
-    /// desired output directory, if different from the current directory. Can be either a relative or absolute file path.
+    /// Desired output directory, if different from the current directory. Can be either a relative or absolute file path.
     pub output_dir: &'a str,
-    /// record terminator to use. CSV default is `\r`, `\n` or `\r\n`. TSV default is `\n`.
+    /// Unified filename for each localization file. Saves each file inside a directory named by the locale.
+    pub output_filename: Option<&'a str>,
+    /// Record terminator to use. CSV default is `\r`, `\n` or `\r\n`. TSV default is `\n`.
     pub terminator_char: Terminator,
-    /// flag to determine if non-header columns should be trimmed. Trims leading and trailing whitespace if enabled.
+    /// Flag to determine if non-header columns should be trimmed. Trims leading and trailing whitespace if enabled.
     pub trim_whitespace: Trim,
 }
 
@@ -118,6 +123,12 @@ impl<'a> Config<'a> {
             ""
         };
 
+        let output_filename = if let Some(path) = &args.output_filename {
+            Some(path.as_str())
+        } else {
+            None
+        };
+
         let terminator_char = if let Some(terminate) = &args.terminator {
             Terminator::Any(terminate.as_bytes()[0])
         } else if is_tsv {
@@ -141,6 +152,7 @@ impl<'a> Config<'a> {
             escape_char,
             flexible: !args.inflexible,
             output_dir,
+            output_filename,
             terminator_char,
             trim_whitespace,
         }
@@ -210,7 +222,7 @@ pub fn run(
     rows: usize,
     config: &Config,
 ) -> Result<(), io::Error> {
-    if generate_json_fast(reader, headings, rows, config.output_dir).is_err() {
+    if generate_json_fast(reader, headings, rows, config).is_err() {
         generate_json(reader, headings, rows, config.output_dir)?
     }
     Ok(())
@@ -265,6 +277,7 @@ mod get_file_reader_tests {
         escape_char: b'"',
         flexible: true,
         output_dir: "",
+        output_filename: None,
         terminator_char: Terminator::CRLF,
         trim_whitespace: Trim::Fields,
     };

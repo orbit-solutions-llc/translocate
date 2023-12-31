@@ -1,9 +1,10 @@
-use crate::get_file_location;
 use crate::translations::{FormatTranslation, LangData, Translations};
+use crate::{get_file_location, Config};
 use csv::{Reader, StringRecord};
 use serde_json::{to_string_pretty, Map, Value};
 use std::collections::HashMap;
-use std::{fs::File, io::Write};
+use std::fs::{create_dir_all, File};
+use std::io::Write;
 use yansi::Paint;
 
 const DUPE_KEY_NOTICE: &str = "translation keys overwritten during conversion.\n";
@@ -106,7 +107,7 @@ pub fn generate_json_fast(
     reader: &mut Reader<File>,
     headings: &StringRecord,
     rows: usize,
-    output_dir: &str,
+    config: &Config,
 ) -> Result<(), std::io::Error> {
     // HashMap::with_capacity_and_hasher(capacity, hasher) can be used instead, with hasher
     // that is faster https://crates.io/keywords/hasher
@@ -170,17 +171,28 @@ pub fn generate_json_fast(
     println!("\n{times_overwritten} {DUPE_KEY_NOTICE}");
 
     for lang in dictionary.keys() {
-        let mut filename = get_file_location(output_dir)?;
-        filename.push(&format!("{lang}.json"));
-        let mut file = File::create(filename)?;
+        let mut filename = get_file_location(config.output_dir)?;
+
+        if let Some(outfile) = config.output_filename {
+            filename.push(lang);
+            create_dir_all(&filename)?;
+            filename.push(format!("{outfile}.json"));
+        } else {
+            filename.push(format!("{lang}.json"));
+        }
+
         if let Some(json) = dictionary.get(lang) {
             writeln!(
-                file,
+                File::create(&filename)?,
                 "{}",
                 to_string_pretty(json).expect("Error writing {lang}.json.")
             )?;
         }
-        println!("{lang}.json written to output directory.");
+        println!(
+            "{} written to {}.",
+            filename.file_name().unwrap().to_string_lossy(),
+            filename.parent().unwrap().to_string_lossy()
+        );
     }
 
     Ok(())
