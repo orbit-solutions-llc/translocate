@@ -14,12 +14,12 @@ const DUPE_KEY_NOTICE: &str = "translation keys overwritten during conversion.\n
 /// * `reader` - a configured CSV reader
 /// * `headings` - heading row for the CSV file
 /// * `rows` - number of rows that are in the CSV file
-/// * `output_dir` - location JSON files should be output to
+/// * `config` - parsed command line configuration
 pub fn generate_json(
     reader: &mut Reader<File>,
     headings: &StringRecord,
     rows: usize,
-    output_dir: &str,
+    config: &Config,
 ) -> Result<(), std::io::Error> {
     // HashMap::with_capacity_and_hasher(capacity, hasher) can be used instead, with hasher
     // that is faster https://crates.io/keywords/hasher
@@ -81,17 +81,28 @@ pub fn generate_json(
     println!("\n{times_overwritten} {DUPE_KEY_NOTICE}");
 
     for lang in dictionary.keys() {
-        let mut filename = get_file_location(output_dir)?;
-        filename.push(&format!("{lang}.json"));
-        let mut file = File::create(filename)?;
+        let mut filename = get_file_location(config.output_dir)?;
+
+        if let Some(outfile) = config.output_filename {
+            filename.push(lang);
+            create_dir_all(&filename)?;
+            filename.push(format!("{outfile}.json"));
+        } else {
+            filename.push(format!("{lang}.json"));
+        }
+
         if let Some(json) = dictionary.get(lang) {
             writeln!(
-                file,
+                File::create(&filename)?,
                 "{}",
                 to_string_pretty(json).expect("Error writing {lang}.json.")
             )?;
         }
-        println!("{lang}.json written to output directory.");
+        println!(
+            "{} written to {}.",
+            filename.file_name().unwrap().to_string_lossy(),
+            filename.parent().unwrap().to_string_lossy()
+        );
     }
 
     Ok(())
@@ -102,7 +113,7 @@ pub fn generate_json(
 /// * `reader` - a configured CSV reader
 /// * `headings` - heading row for the CSV file
 /// * `rows` - number of rows that are in the CSV file
-/// * `output_dir` - location JSON files should be output to
+/// * `config` - parsed command line configuration
 pub fn generate_json_fast(
     reader: &mut Reader<File>,
     headings: &StringRecord,
@@ -205,12 +216,14 @@ mod generator_tests {
     use csv::{Reader, StringRecord, Terminator, Trim};
     use std::fs::{self, File};
     use std::io::Write;
+    use std::path::Path;
 
     const CONFIG: Config = Config {
         delimiter: b',',
         escape_char: b'"',
         flexible: true,
         output_dir: "",
+        output_filename: None,
         terminator_char: Terminator::CRLF,
         trim_whitespace: Trim::Fields,
     };
@@ -218,6 +231,11 @@ mod generator_tests {
     const CSV_ALL_LANG: &str = "\
 id,da_DK,de_DE,en_US,es_ES,fr_FR,it_IT,TextDomain,nl_NL,pt_BR,pt_PT,sv_SE,
 new.translation,ny oversættelse,neue Übersetzung,new translation,nueva traducción,nouvelle traduction,nuova traduzione,,nieuwe vertaling,nova tradução,nova tradução,ny översättning,
+";
+
+    const CSV_ROW_A: &str = "\
+id,da_DK_a,
+new.translation,,
 ";
 
     const CSV_ROW_0: &str = "\
@@ -277,7 +295,7 @@ new.translation\tny oversættelse\t
             .unwrap();
         let mut reader = get_file_reader(input_filename, config).unwrap();
         let file = get_file_location(input_filename).unwrap();
-        let mut reader_count = Reader::from_path(&file).unwrap();
+        let mut reader_count = Reader::from_path(file).unwrap();
 
         let headings = reader.headers().unwrap().clone();
         let rows = reader_count.byte_records().count();
@@ -315,7 +333,7 @@ new.translation\tny oversættelse\t
         ];
         let mut test_conf = generate_csv_reader(test_file_path, CSV_ALL_LANG, &CONFIG);
 
-        generate_json_fast(&mut test_conf.0, &test_conf.1, test_conf.2, "").unwrap();
+        generate_json_fast(&mut test_conf.0, &test_conf.1, test_conf.2, &CONFIG).unwrap();
 
         for (idx, file) in lang_file_list.iter().enumerate() {
             let trans = fs::read_to_string(file).unwrap();
@@ -341,7 +359,7 @@ new.translation\tny oversættelse\t
         };
         let mut test_conf = generate_csv_reader(test_file_path, TSV_ROW_1, config);
 
-        generate_json_fast(&mut test_conf.0, &test_conf.1, test_conf.2, "").unwrap();
+        generate_json_fast(&mut test_conf.0, &test_conf.1, test_conf.2, config).unwrap();
 
         let trans = fs::read_to_string(lang_file_path).unwrap();
         let trans = trans.trim();
@@ -349,6 +367,35 @@ new.translation\tny oversættelse\t
         fs::remove_file(lang_file_path).unwrap();
 
         assert_eq!(trans, DA_JSON_1);
+    }
+
+    #[test]
+    fn it_creates_a_json_file_with_specific_name() {
+        let test_file_path = "test_file_a.csv";
+        let lang_file_path = "da_DK_a/locales.json";
+        let config = &Config {
+            output_filename: Some("locales"),
+            ..CONFIG
+        };
+
+        let mut test_conf = generate_csv_reader(test_file_path, CSV_ROW_A, config);
+        generate_json_fast(&mut test_conf.0, &test_conf.1, test_conf.2, config).unwrap();
+
+        assert!(Path::new(lang_file_path).exists());
+        fs::remove_file(lang_file_path).unwrap();
+
+        let config = &Config {
+            output_dir: "custom",
+            ..*config
+        };
+        let lang_file_path = "custom/da_DK_a/locales.json";
+        let mut test_conf = generate_csv_reader(test_file_path, CSV_ROW_A, config);
+        generate_json_fast(&mut test_conf.0, &test_conf.1, test_conf.2, config).unwrap();
+
+        assert!(Path::new(lang_file_path).exists());
+
+        fs::remove_file(test_file_path).unwrap();
+        fs::remove_file(lang_file_path).unwrap();
     }
 
     #[test]
@@ -361,7 +408,7 @@ new.translation\tny oversættelse\t
         };
         let mut test_conf = generate_csv_reader(test_file_path, SSV_ROW_1, config);
 
-        generate_json_fast(&mut test_conf.0, &test_conf.1, test_conf.2, "").unwrap();
+        generate_json_fast(&mut test_conf.0, &test_conf.1, test_conf.2, config).unwrap();
 
         let trans = fs::read_to_string(lang_file_path).unwrap();
         let trans = trans.trim();
@@ -377,13 +424,13 @@ new.translation\tny oversættelse\t
         let test_file_0 = "test_file0.csv";
         let lang_file_0 = "da_DK_0.json";
         let mut test_conf_0 = generate_csv_reader(test_file_0, CSV_ROW_0, &CONFIG);
-        generate_json_fast(&mut test_conf_0.0, &test_conf_0.1, test_conf_0.2, "").unwrap();
+        generate_json_fast(&mut test_conf_0.0, &test_conf_0.1, test_conf_0.2, &CONFIG).unwrap();
 
         // Actual translation
         let test_file_1 = "test_file1.csv";
         let lang_file_1 = "da_DK_1.json";
         let mut test_conf_1 = generate_csv_reader(test_file_1, CSV_ROW_1, &CONFIG);
-        generate_json_fast(&mut test_conf_1.0, &test_conf_1.1, test_conf_1.2, "").unwrap();
+        generate_json_fast(&mut test_conf_1.0, &test_conf_1.1, test_conf_1.2, &CONFIG).unwrap();
 
         let trans_0 = fs::read_to_string(lang_file_0).unwrap();
         let trans_0 = trans_0.trim();
@@ -405,7 +452,7 @@ new.translation\tny oversættelse\t
         let lang_file_path = "da_DK_2.json";
         let mut test_conf = generate_csv_reader(test_file_path, CSV_ROW_2, &CONFIG);
 
-        generate_json_fast(&mut test_conf.0, &test_conf.1, test_conf.2, "").unwrap();
+        generate_json_fast(&mut test_conf.0, &test_conf.1, test_conf.2, &CONFIG).unwrap();
 
         let trans = fs::read_to_string(lang_file_path).unwrap();
         let trans = trans.trim();
@@ -421,7 +468,7 @@ new.translation\tny oversættelse\t
         let lang_file_path = "da_DK_3.json";
         let mut test_conf = generate_csv_reader(test_file_path, CSV_ROW_3, &CONFIG);
 
-        generate_json_fast(&mut test_conf.0, &test_conf.1, test_conf.2, "").unwrap();
+        generate_json_fast(&mut test_conf.0, &test_conf.1, test_conf.2, &CONFIG).unwrap();
 
         let trans = fs::read_to_string(lang_file_path).unwrap();
         let trans = trans.trim();
@@ -437,7 +484,7 @@ new.translation\tny oversættelse\t
         let lang_file_path = "da_DK_4.json";
         let mut test_conf = generate_csv_reader(test_file_path, CSV_ROW_4, &CONFIG);
 
-        generate_json_fast(&mut test_conf.0, &test_conf.1, test_conf.2, "").unwrap();
+        generate_json_fast(&mut test_conf.0, &test_conf.1, test_conf.2, &CONFIG).unwrap();
 
         let trans = fs::read_to_string(lang_file_path).unwrap();
         let trans = trans.trim();

@@ -223,7 +223,7 @@ pub fn run(
     config: &Config,
 ) -> Result<(), io::Error> {
     if generate_json_fast(reader, headings, rows, config).is_err() {
-        generate_json(reader, headings, rows, config.output_dir)?
+        generate_json(reader, headings, rows, config)?
     }
     Ok(())
 }
