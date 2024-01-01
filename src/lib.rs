@@ -123,11 +123,7 @@ impl<'a> Config<'a> {
             ""
         };
 
-        let output_filename = if let Some(path) = &args.output_filename {
-            Some(path.as_str())
-        } else {
-            None
-        };
+        let output_filename = args.output_filename.as_deref();
 
         let terminator_char = if let Some(terminate) = &args.terminator {
             Terminator::Any(terminate.as_bytes()[0])
