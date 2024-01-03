@@ -6,6 +6,7 @@ license = "MIT"
 description = "translocate is a high performance converter that takes CSV translation files and outputs corresponding JSON translation files."
 documentation = "https://docs.rs/translocate"
 repository = "https://code.orbitsolutions.dev/orb-it-solutions/translocate"
+rust-version = "1.63"
 readme = "README.md"
 keywords = [
   "csv",
