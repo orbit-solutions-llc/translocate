@@ -78,7 +78,10 @@ pub fn generate_json(
             }
         }
     }
-    println!("\n{times_overwritten} {DUPE_KEY_NOTICE}");
+
+    if times_overwritten > 0 {
+        println!("\n{times_overwritten} {DUPE_KEY_NOTICE}")
+    }
 
     for lang in dictionary.keys() {
         let mut filename = get_file_location(config.output_dir)?;
@@ -179,7 +182,10 @@ pub fn generate_json_fast(
             }
         }
     }
-    println!("\n{times_overwritten} {DUPE_KEY_NOTICE}");
+
+    if times_overwritten > 0 {
+        println!("\n{times_overwritten} {DUPE_KEY_NOTICE}")
+    }
 
     for lang in dictionary.keys() {
         let mut filename = get_file_location(config.output_dir)?;
