@@ -42,10 +42,12 @@ pub fn generate_json(
                         LangData::Integer(v) => format!("{v}"),
                         LangData::String(v) => v.to_owned(),
                     };
-                    // Only replace value below if there's an actual value.
-                    if value.is_empty() {
-                        continue;
-                    };
+                    // if the new value is empty and the old value is not empty, skip replacement.
+                    if let Some(old_val) = lang_map.get(kv.0) {
+                        if value.is_empty() && old_val != "" {
+                            continue;
+                        };
+                    }
 
                     let old_val = lang_map.insert(kv.0.into(), value.into());
                     if let Some(_val) = old_val {
@@ -144,13 +146,15 @@ pub fn generate_json_fast(
                     None => "",
                 };
 
-                // Checking if there's already a language map entry for this translation key
-                // and replace it if there is.
+                // Check if there's an existing translation key record in the language map
+                // and replace it.
                 if let Some(lang_map) = dictionary.get_mut(heading) {
-                    // but only replace if there's an actual value.
-                    if value.is_empty() {
-                        continue;
-                    };
+                    // But if the new value is empty and the old value is not empty, skip replacement.
+                    if let Some(old_val) = lang_map.get(&record[0]) {
+                        if value.is_empty() && old_val != "" {
+                            continue;
+                        };
+                    }
 
                     let old_val = lang_map.insert(record[0].into(), value.into());
                     if let Some(_val) = old_val {
@@ -246,6 +250,7 @@ new.translation,,
 
     const CSV_ROW_0: &str = "\
 id,da_DK_0,
+old.translation,,
 new.translation,,
 ";
 
@@ -283,7 +288,7 @@ id\tda_DK_t\t
 new.translation\tny oversættelse\t
 ";
 
-    const DA_JSON_0: &str = "{\n  \"new.translation\": \"\"\n}";
+    const DA_JSON_0: &str = "{\n  \"new.translation\": \"\",\n  \"old.translation\": \"\"\n}";
     const DA_JSON_1: &str = "{\n  \"new.translation\": \"ny oversættelse\"\n}";
     const DA_JSON_2: &str = "{\n  \"new.translation\": \"nyoversættelse\"\n}";
 
