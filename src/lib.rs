@@ -54,7 +54,8 @@ pub struct CliArgs {
     /// if set, saves each file with the name provided inside a directory named by the locale.
     pub output_filename: Option<String>,
     #[argh(option, short = 't')]
-    /// character which indicates the end of each record. CSV default is `\r`, `\n` or `\r\n`. TSV default is `\n`.
+    /// character indicating end of each record, passed in as its decimal representation e.g. \n = 10, \r = 13, \t = 9.
+    /// CSV default is `\r`, `\n` OR `\r\n`. TSV default is `\n`.
     pub terminator: Option<String>,
     #[argh(switch, short = 'T')]
     /// determines if non-header columns should be trimmed. Passing this flag enables option,
@@ -125,8 +126,14 @@ impl<'a> Config<'a> {
 
         let output_filename = args.output_filename.as_deref();
 
-        let terminator_char = if let Some(terminate) = &args.terminator {
-            Terminator::Any(terminate.as_bytes()[0])
+        let terminator_char = if let Some(terminate_on) = &args.terminator {
+            match terminate_on.parse::<u8>() {
+                Ok(val) => Terminator::Any(val),
+                Err(err) => {
+                    eprintln!("{} {}. Try passing the decimal number (less than 256) representing your ascii separator.", "Error:".bold().on_bright_red(), err);
+                    std::process::exit(1)
+                }
+            }
         } else if is_tsv {
             Terminator::Any(b'\n')
         } else {
