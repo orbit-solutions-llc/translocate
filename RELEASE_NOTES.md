@@ -1,4 +1,5 @@
-# Release v0.6.0
+# Release v0.7.0
 
-## *2024-01-01*
-- Add option to output to specific filenames. When this option is used, the locales available will be used as directory names.
+## *2024-01-04*
+- Only overwrite translation keys when the value is not empty.
+- Fix parsing of terminator CLI argument.
