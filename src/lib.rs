@@ -234,6 +234,7 @@ pub fn run(
 #[cfg(test)]
 mod get_file_location_tests {
     use crate::get_file_location;
+    use pretty_assertions::assert_eq;
 
     #[test]
     #[cfg(not(target_os = "windows"))]

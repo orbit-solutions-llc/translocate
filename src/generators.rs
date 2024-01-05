@@ -227,6 +227,7 @@ mod generator_tests {
     use std::fs::{self, File};
     use std::io::Write;
     use std::path::Path;
+    use pretty_assertions::assert_eq;
 
     const CONFIG: Config = Config {
         delimiter: b',',
