@@ -46,13 +46,10 @@ struct Languages {
     sv_se: LangData,
 }
 
-/// Fields represent the data in (C/T)SV file headers that we want to
-/// get/convert.
+/// Fields represent the data in CSV file headers that we want to get/convert.
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Translations {
     id: String,
-    #[serde(alias = "TextDomain")]
-    text_domain: String,
     #[serde(flatten)]
     languages: Languages,
 }

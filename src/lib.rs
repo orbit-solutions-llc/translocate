@@ -43,9 +43,12 @@ pub struct CliArgs {
     #[argh(option, short = 'e')]
     /// escape character to use for quotes when parsing. Uses `\` for TSV and `"` for CSV by default.
     pub escape_char: Option<String>,
+    #[argh(option, short = 'I')]
+    /// list of csv column header names, separated by commas, to skip when converting to JSON.
+    pub ignored_headings: Option<String>,
     #[argh(switch, short = 'i')]
-    /// determines if input file parsing continues should the number of columns in each record differ.
-    /// Passing this flag enables option, making parsing is stricter (less flexible).
+    /// set whether input file parsing should continue if the number of columns in each record differs.
+    /// Passing this flag enables stricter (less flexible) parsing.
     pub inflexible: bool,
     #[argh(option, short = 'o')]
     /// desired output directory, if different from the current directory. Can be either a relative or absolute file path.
@@ -58,8 +61,7 @@ pub struct CliArgs {
     /// CSV default is `\r`, `\n` OR `\r\n`. TSV default is `\n`.
     pub terminator: Option<String>,
     #[argh(switch, short = 'T')]
-    /// determines if non-header columns should be trimmed. Passing this flag enables option,
-    /// which trims leading and trailing whitespace.
+    /// trim leading and trailing whitespace in non-header columns. Enabled by passing this flag.
     pub trim: Option<bool>,
     #[argh(switch, short = 'v')]
     /// version information
@@ -77,6 +79,8 @@ pub struct Config<'a> {
     pub delimiter: u8,
     /// Escape character to use for quotes when parsing columns. Uses `\` for TSV and `"` for CSV by default.
     pub escape_char: u8,
+    /// list of colum names, separated by commas, to skip when converting to JSON.
+    pub ignored_headings: Option<Vec<&'a str>>,
     /// Flag to determine whether processing the input file should continue if the number of columns in records is not always the same.
     /// If true, parsing is less strict. Default is true.
     pub flexible: bool,
@@ -118,6 +122,13 @@ impl<'a> Config<'a> {
             b'"'
         };
 
+        let ignored_headings = if let Some(list) = &args.ignored_headings {
+            let ignored = list.split(',').collect::<Vec<&str>>();
+            Some(ignored)
+        } else {
+            None
+        };
+
         let output_dir = if let Some(path) = &args.output_dir {
             path
         } else {
@@ -153,6 +164,7 @@ impl<'a> Config<'a> {
         Config {
             delimiter,
             escape_char,
+            ignored_headings,
             flexible: !args.inflexible,
             output_dir,
             output_filename,
@@ -279,6 +291,7 @@ mod get_file_reader_tests {
     const CONFIG: Config = Config {
         delimiter: b',',
         escape_char: b'"',
+        ignored_headings: None,
         flexible: true,
         output_dir: "",
         output_filename: None,

@@ -29,11 +29,17 @@ pub fn generate_json(
     for (idx, item) in reader.deserialize().enumerate() {
         let record: Translations = item?;
         let mut overwrote_data = false;
+        let ignored_headings = if let Some(list) = &config.ignored_headings {
+            list.clone()
+        } else {
+            vec![""]
+        };
 
         // Loop in a loop? Incredibly inefficient? Who cares!? Optimize when it matters.
         for heading in headings.iter() {
+            let heading = heading.trim();
             // Only process for language headings
-            if heading != "id" && heading != "TextDomain" && !heading.trim().is_empty() {
+            if heading != "id" && !ignored_headings.contains(&heading) && !heading.is_empty() {
                 let kv = record.format_lang(heading);
                 if let Some(lang_map) = dictionary.get_mut(heading) {
                     // No matter what the parser thinks, we want everything treated as a string
@@ -132,6 +138,11 @@ pub fn generate_json_fast(
 
     let mut record = StringRecord::new();
     let mut idx = 0;
+    let ignored_headings = if let Some(list) = &config.ignored_headings {
+        list.clone()
+    } else {
+        vec![""]
+    };
 
     while reader.read_record(&mut record)? {
         let mut overwrote_data = false;
@@ -139,8 +150,9 @@ pub fn generate_json_fast(
 
         // Loop in a loop? Incredibly inefficient? Who cares!? Optimize when it matters.
         for (column_idx, heading) in headings.iter().enumerate() {
+            let heading = heading.trim();
             // Only process for language headings
-            if column_idx != 0 && heading != "TextDomain" && !heading.trim().is_empty() {
+            if column_idx != 0 && !ignored_headings.contains(&heading) && !heading.is_empty() {
                 let value = match &record.get(column_idx) {
                     Some(head) => head,
                     None => "",
@@ -224,14 +236,15 @@ mod generator_tests {
     use super::generate_json_fast;
     use crate::{get_file_location, get_file_reader, Config};
     use csv::{Reader, StringRecord, Terminator, Trim};
+    use pretty_assertions::assert_eq;
     use std::fs::{self, File};
     use std::io::Write;
     use std::path::Path;
-    use pretty_assertions::assert_eq;
 
     const CONFIG: Config = Config {
         delimiter: b',',
         escape_char: b'"',
+        ignored_headings: None,
         flexible: true,
         output_dir: "",
         output_filename: None,
@@ -240,7 +253,7 @@ mod generator_tests {
     };
 
     const CSV_ALL_LANG: &str = "\
-id,da_DK,de_DE,en_US,es_ES,fr_FR,it_IT,TextDomain,nl_NL,pt_BR,pt_PT,sv_SE,
+id,da_DK,de_DE,en_US,es_ES,fr_FR,it_IT,LangDomain,nl_NL,pt_BR,pt_PT,sv_SE,
 new.translation,ny oversættelse,neue Übersetzung,new translation,nueva traducción,nouvelle traduction,nuova traduzione,,nieuwe vertaling,nova tradução,nova tradução,ny översättning,
 ";
 
@@ -316,9 +329,9 @@ new.translation\tny oversættelse\t
     }
 
     #[test]
-    fn it_writes_all_columns_except_textdomain_to_a_file() {
+    fn it_writes_all_columns_except_langdomain_to_a_file() {
         let test_file_path = "test_file0.csv";
-        let illegal_file = "TextDomain.json";
+        let illegal_file = "LangDomain.json";
         let lang_file_list = [
             "da_DK.json",
             "de_DE.json",
@@ -343,9 +356,13 @@ new.translation\tny oversættelse\t
             "nova tradução",
             "ny översättning",
         ];
-        let mut test_conf = generate_csv_reader(test_file_path, CSV_ALL_LANG, &CONFIG);
+        let config = &Config {
+            ignored_headings: Some(vec!["LangDomain"]),
+            ..CONFIG
+        };
+        let mut test_conf = generate_csv_reader(test_file_path, CSV_ALL_LANG, config);
 
-        generate_json_fast(&mut test_conf.0, &test_conf.1, test_conf.2, &CONFIG).unwrap();
+        generate_json_fast(&mut test_conf.0, &test_conf.1, test_conf.2, config).unwrap();
 
         for (idx, file) in lang_file_list.iter().enumerate() {
             let trans = fs::read_to_string(file).unwrap();
@@ -397,7 +414,8 @@ new.translation\tny oversættelse\t
 
         let config = &Config {
             output_dir: "custom",
-            ..*config
+            output_filename: Some("locales"),
+            ..CONFIG
         };
         let lang_file_path = "custom/da_DK_a/locales.json";
         let mut test_conf = generate_csv_reader(test_file_path, CSV_ROW_A, config);
@@ -406,7 +424,8 @@ new.translation\tny oversættelse\t
         assert!(Path::new(lang_file_path).exists());
 
         fs::remove_file(test_file_path).unwrap();
-        fs::remove_file(lang_file_path).unwrap();
+        fs::remove_dir_all("custom").unwrap();
+        fs::remove_dir_all("da_DK_a").unwrap();
     }
 
     #[test]
@@ -426,6 +445,23 @@ new.translation\tny oversættelse\t
         fs::remove_file(lang_file_path).unwrap();
 
         assert_eq!(trans, DA_JSON_1);
+    }
+
+    #[test]
+    fn it_ignores_column_header_when_configured_to_do_so() {
+        // Empty translation
+        let test_file_0 = "test_file_ignore.csv";
+        let lang_file_0 = "da_DK_0.json";
+        let config = &Config {
+            ignored_headings: Some(vec!["da_DK_0"]),
+            ..CONFIG
+        };
+
+        let mut test_conf_0 = generate_csv_reader(test_file_0, CSV_ROW_0, config);
+        generate_json_fast(&mut test_conf_0.0, &test_conf_0.1, test_conf_0.2, config).unwrap();
+
+        fs::remove_file(test_file_0).unwrap();
+        assert!(File::open(lang_file_0).is_err());
     }
 
     #[test]
