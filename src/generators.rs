@@ -289,9 +289,9 @@ id\tda_DK_t\t
 new.translation\tny oversættelse\t
 ";
 
-    const DA_JSON_0: &str = "{\n  \"new.translation\": \"\",\n  \"old.translation\": \"\"\n}";
-    const DA_JSON_1: &str = "{\n  \"new.translation\": \"ny oversættelse\"\n}";
-    const DA_JSON_2: &str = "{\n  \"new.translation\": \"nyoversættelse\"\n}";
+    const DA_JSON_0: &str = "{\n  \"new.translation\": \"\",\n  \"old.translation\": \"\"\n}\n";
+    const DA_JSON_1: &str = "{\n  \"new.translation\": \"ny oversættelse\"\n}\n";
+    const DA_JSON_2: &str = "{\n  \"new.translation\": \"nyoversættelse\"\n}\n";
 
     fn generate_csv_reader(
         input_filename: &str,
@@ -374,7 +374,6 @@ new.translation\tny oversættelse\t
         generate_json_fast(&mut test_conf.0, &test_conf.1, test_conf.2, config).unwrap();
 
         let trans = fs::read_to_string(lang_file_path).unwrap();
-        let trans = trans.trim();
         fs::remove_file(test_file_path).unwrap();
         fs::remove_file(lang_file_path).unwrap();
 
@@ -423,7 +422,6 @@ new.translation\tny oversættelse\t
         generate_json_fast(&mut test_conf.0, &test_conf.1, test_conf.2, config).unwrap();
 
         let trans = fs::read_to_string(lang_file_path).unwrap();
-        let trans = trans.trim();
         fs::remove_file(test_file_path).unwrap();
         fs::remove_file(lang_file_path).unwrap();
 
@@ -445,12 +443,10 @@ new.translation\tny oversættelse\t
         generate_json_fast(&mut test_conf_1.0, &test_conf_1.1, test_conf_1.2, &CONFIG).unwrap();
 
         let trans_0 = fs::read_to_string(lang_file_0).unwrap();
-        let trans_0 = trans_0.trim();
         fs::remove_file(test_file_0).unwrap();
         fs::remove_file(lang_file_0).unwrap();
 
         let trans_1 = fs::read_to_string(lang_file_1).unwrap();
-        let trans_1 = trans_1.trim();
         fs::remove_file(test_file_1).unwrap();
         fs::remove_file(lang_file_1).unwrap();
 
@@ -467,7 +463,6 @@ new.translation\tny oversættelse\t
         generate_json_fast(&mut test_conf.0, &test_conf.1, test_conf.2, &CONFIG).unwrap();
 
         let trans = fs::read_to_string(lang_file_path).unwrap();
-        let trans = trans.trim();
         fs::remove_file(test_file_path).unwrap();
         fs::remove_file(lang_file_path).unwrap();
 
@@ -483,7 +478,6 @@ new.translation\tny oversættelse\t
         generate_json_fast(&mut test_conf.0, &test_conf.1, test_conf.2, &CONFIG).unwrap();
 
         let trans = fs::read_to_string(lang_file_path).unwrap();
-        let trans = trans.trim();
         fs::remove_file(test_file_path).unwrap();
         fs::remove_file(lang_file_path).unwrap();
 
@@ -499,7 +493,6 @@ new.translation\tny oversættelse\t
         generate_json_fast(&mut test_conf.0, &test_conf.1, test_conf.2, &CONFIG).unwrap();
 
         let trans = fs::read_to_string(lang_file_path).unwrap();
-        let trans = trans.trim();
         fs::remove_file(test_file_path).unwrap();
         fs::remove_file(lang_file_path).unwrap();
 
