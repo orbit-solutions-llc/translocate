@@ -1,5 +1,8 @@
-# Release v0.7.0
+# Release v0.8.0
 
-## *2024-01-04*
-- Only overwrite translation keys when the value is not empty.
-- Fix parsing of terminator CLI argument.
+## *2024-01-10*
+- Added new command line flag `-I`/`--ignored_headings` which allows excluding CSV one or more column headers from processing. e.g.
+
+```sh
+translocate -I "en_US,es_ES" ./path/to/file.csv
+```

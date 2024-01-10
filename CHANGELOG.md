@@ -3,16 +3,23 @@
 ## Unreleased
 
 ---
+## v0.8.0 | *2024-01-10*
+- Added new command line flag `-I`/`--ignored_headings` which allows excluding CSV one or more column headers from processing. e.g.
+
+```sh
+translocate -I "en_US,es_ES" ./path/to/file.csv
+```
 
 ## v0.7.0 | *2024-01-04*
 - Only overwrite translation keys when the value is not empty.
-- Fix parsing of terminator CLI argument.
+- Fix parsing of terminator CLI argument `-t`/`--terminator`.
 
 ## v0.6.0 | *2024-01-01*
-- Add option to output to specific filenames. When this option is used, the locales available will be used as directory names.
+- Add cli option `-O`/`--output_filename` to output to specific filenames.
+- When this option is used, the locales available will be used as directory names.
 
 ## v0.5.2 | *2023-12-30*
-- Improve crate documentation
+- Improve crate documentation.
 
 ## v0.5.1 | *2023-12-27*
 - Republish 0.5.0 without useless csv/tsv files included.
@@ -22,7 +29,7 @@
 - Add more tests testable.
 
 ## v0.4.0 | *2023-12-12*
-- Made output directory configurable
+- Made output directory configurable.
 - Modularized app logic to make it more testable.
 
 ## v0.3.2 | *2023-12-09*
