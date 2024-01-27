@@ -3,7 +3,7 @@
 //! ## Overview
 //! CSV files are a convenient, and somewhat common format for housing translations. They are
 //! plain text files in the [CSV format](https://en.wikipedia.org/wiki/Comma-separated_values).
-//! The ease of exporting from an spreadsheet to CSV format makes it an ideal candidate for
+//! The ease of exporting from a spreadsheet to the CSV format makes it an ideal candidate for
 //! non-technical users to use for output in localization tasks. CSV files are also
 //! a supported import and export format for many localization services.
 //!
@@ -12,11 +12,11 @@
 //! challenging. JSON meanwhile has a very strict format. It is also very popular&mdash;especially in web
 //! development&mdash;as a localization format.
 //!
-//! This crate provides a binary, `translocate` which uses functions provided by `libtranslocate` to
+//! This crate provides the `translocate` binary, which uses `libtranslocate` to
 //! to read an input CSV localization file, and output JSON localization files, with one JSON file
 //! being generated for every localization that exists as a column in the input CSV file.
 //!
-//! The format of the JSON files output are in the form `{ "localization-key": "localized text" }` e.g.
+//! The format of the JSON files output will be `{ "localization-key": "localized text" }` e.g.
 //!
 //! ```json
 //! {
@@ -35,7 +35,7 @@ use yansi::Paint;
 
 #[derive(FromArgs)]
 #[argh(description = "High performance CSV translation to JSON translation file transformer.")]
-/// Defines the command line arguments that the translocate binary will accepts.
+/// Defines the command line arguments that the translocate binary will accept.
 pub struct CliArgs {
     #[argh(option, short = 'd')]
     /// column delimiter to use when parsing. Uses `\t` for TSV and `,` for CSV by default.
