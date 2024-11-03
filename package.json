@@ -16,6 +16,9 @@
   "bugs": {
     "url": "https://code.orbitsolutions.dev/orb-it-solutions/translocate/issues"
   },
+  "engines": {
+    "node": ">=18.20.0"
+  },
   "scripts": {
     "preinstall": "node node_scripts/uninstall.js",
     "postinstall": "node node_scripts/install.js"
@@ -30,6 +33,6 @@
   "author": "Orville Bennett",
   "license": "MIT",
   "dependencies": {
-    "simple-binary-install": "0.2.1"
+    "@orb/simple-binary-install": "npm:@jsr/orb__simple-binary-install@1.0.0-beta.3"
   }
 }

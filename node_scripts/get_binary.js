@@ -1,5 +1,5 @@
-import { Binary } from 'simple-binary-install'
-import pkg_info from '../package.json' assert { type: 'json' }
+import { Binary } from "@orb/simple-binary-install"
+import pkg_info from '../package.json' with { type: 'json' }
 import os from 'node:os'
 
 function getBinary() {
