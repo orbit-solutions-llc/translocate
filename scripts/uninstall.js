@@ -2,6 +2,6 @@ import { getBinary } from "./get_binary.js"
 
 try {
   getBinary().uninstall()
-} catch (err) {
+} catch (_err) {
   console.log('Nothing to uninstall')
 }
