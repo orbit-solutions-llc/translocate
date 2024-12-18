@@ -3,6 +3,10 @@
 ## Unreleased
 
 ---
+## v0.8.1-beta.1 | *2024-12-18*
+- Switch to use `@orb/simple-binary-install` package hosted on JSR registry
+
+---
 ## v0.8.0 | *2024-01-10*
 - Added new command line flag `-I`/`--ignored_headings` which allows excluding CSV one or more column headers from processing. e.g.
 
